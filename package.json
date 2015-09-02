@@ -7,7 +7,11 @@
   "devDependencies": {
     "chai": "^2.1.2",
     "mocha": "*",
-    "node-localstorage": "^0.5.0"
+    "node-localstorage": "^0.5.0",
+    "underscore": "^1.8.3"
+  },
+  "dependencies": {
+    "ms": "^0.7.1"
   },
   "repository": {
     "type": "git",
@@ -23,7 +27,8 @@
     }
   ],
   "scripts": {
-    "test": "mocha test/locally-mocha.js"
+    "test": "mocha test/locally-mocha.js",
+    "build": "uglifyjs dist/locally.js -o dist/locally.min.js"
   },
   "readmeFilename": "README.md",
   "homepage": "https://github.com/ozantunca/locally"
