@@ -48,66 +48,66 @@ function deepCompare () {
 
     // At last checking prototypes as good a we can
     if (!(x instanceof Object && y instanceof Object)) {
-        return false;
+      return false;
     }
 
     if (x.isPrototypeOf(y) || y.isPrototypeOf(x)) {
-        return false;
+      return false;
     }
 
     if (x.constructor !== y.constructor) {
-        return false;
+      return false;
     }
 
     if (x.prototype !== y.prototype) {
-        return false;
+      return false;
     }
 
     // Check for infinitive linking loops
     if (leftChain.indexOf(x) > -1 || rightChain.indexOf(y) > -1) {
-         return false;
+       return false;
     }
 
     // Quick checking of one object beeing a subset of another.
     // todo: cache the structure of arguments[0] for performance
     for (p in y) {
-        if (y.hasOwnProperty(p) !== x.hasOwnProperty(p)) {
-            return false;
-        }
-        else if (typeof y[p] !== typeof x[p]) {
-            return false;
-        }
+      if (y.hasOwnProperty(p) !== x.hasOwnProperty(p)) {
+        return false;
+      }
+      else if (typeof y[p] !== typeof x[p]) {
+        return false;
+      }
     }
 
     for (p in x) {
-        if (y.hasOwnProperty(p) !== x.hasOwnProperty(p)) {
+      if (y.hasOwnProperty(p) !== x.hasOwnProperty(p)) {
+        return false;
+      }
+      else if (typeof y[p] !== typeof x[p]) {
+        return false;
+      }
+
+      switch (typeof (x[p])) {
+        case 'object':
+        case 'function':
+
+          leftChain.push(x);
+          rightChain.push(y);
+
+          if (!compare2Objects (x[p], y[p])) {
             return false;
-        }
-        else if (typeof y[p] !== typeof x[p]) {
+          }
+
+          leftChain.pop();
+          rightChain.pop();
+          break;
+
+        default:
+          if (x[p] !== y[p]) {
             return false;
-        }
-
-        switch (typeof (x[p])) {
-            case 'object':
-            case 'function':
-
-                leftChain.push(x);
-                rightChain.push(y);
-
-                if (!compare2Objects (x[p], y[p])) {
-                    return false;
-                }
-
-                leftChain.pop();
-                rightChain.pop();
-                break;
-
-            default:
-                if (x[p] !== y[p]) {
-                    return false;
-                }
-                break;
-        }
+          }
+          break;
+      }
     }
 
     return true;
@@ -120,15 +120,20 @@ function deepCompare () {
 
   for (i = 1, l = arguments.length; i < l; i++) {
 
-      leftChain = []; //Todo: this can be cached
-      rightChain = [];
+    leftChain = []; //Todo: this can be cached
+    rightChain = [];
 
-      if (!compare2Objects(arguments[0], arguments[i])) {
-          return false;
-      }
+    if (!compare2Objects(arguments[0], arguments[i])) {
+      return false;
+    }
   }
 
   return true;
+}
+
+function expectedKeys(len) {
+  assert.lengthOf(localStorage, len);
+  assert.lengthOf(store.keys(), len - 1);
 }
 
 if (!fs.existsSync('test/storage')) {
@@ -153,7 +158,7 @@ describe('locally', function() {
       store.set('key', 'value');
 
       // tests
-      assert.lengthOf(localStorage, len + 1);
+      expectedKeys(len + 1);
       assert.strictEqual(store.get('key'), 'value');
     });
 
@@ -162,7 +167,7 @@ describe('locally', function() {
       store.set('key', 'different value');
 
       // tests
-      assert.lengthOf(localStorage, len);
+      expectedKeys(len);
       assert.strictEqual(store.get('key'), 'different value');
     });
 
@@ -171,7 +176,7 @@ describe('locally', function() {
       store.set('key2', 'some value');
 
       // tests
-      assert.lengthOf(localStorage, len + 1);
+      expectedKeys(len + 1);
       assert.strictEqual(store.get('key2'), 'some value');
     });
 
@@ -180,7 +185,7 @@ describe('locally', function() {
       store.set('key4', 'value', { ttl: 1000 });
 
       // tests
-      assert.lengthOf(localStorage, len + 1);
+      expectedKeys(len + 1);
       assert.isNotNull(store.get('key4'));
 
       setTimeout(function () {
@@ -198,7 +203,7 @@ describe('locally', function() {
       store.set('key3', obj);
 
       // tests
-      assert.lengthOf(localStorage, len + 1);
+      expectedKeys(len + 1);
       assert.typeOf(store.get('key3'), 'object');
       assert.ok(deepCompare(store.get('key3'), obj));
     });
@@ -209,7 +214,7 @@ describe('locally', function() {
       store.set('fn1', fn);
 
       // tests
-      assert.lengthOf(localStorage, len + 1);
+      expectedKeys(len + 1);
       assert.typeOf(store.get('fn1'), 'function');
       assert.equal(store.get('fn1')(), 'test function');
     });
@@ -220,7 +225,7 @@ describe('locally', function() {
       store.set('date1', date);
 
       // tests
-      assert.lengthOf(localStorage, len + 1);
+      expectedKeys(len + 1);
       assert.typeOf(store.get('date1'), 'date');
       assert.ok(store.get('date1') instanceof Date);
       assert.equal(store.get('date1').getTime(), (new Date(2012, 10, 10).getTime()));
@@ -232,7 +237,7 @@ describe('locally', function() {
       store.set('num1', num);
 
       // tests
-      assert.lengthOf(localStorage, len + 1);
+      expectedKeys(len + 1);
       assert.typeOf(store.get('num1'), 'number');
     });
   });
@@ -377,7 +382,7 @@ describe('locally', function() {
   });
 
   describe('not breaking current data', function () {
-    it('should read current data', function () {
+    it('should read current data', function () {1
       localStorage.setItem('outsideItem1', 'testItem1');
       localStorage.setItem('outsideItem2', 123);
 
@@ -393,8 +398,7 @@ describe('locally', function() {
   describe('clear()', function () {
     it('should remove all values', function () {
       store.clear();
-      assert.lengthOf(localStorage, 1);
-      assert.lengthOf(store.keys(), 0);
+      expectedKeys(1);
     });
   });
 

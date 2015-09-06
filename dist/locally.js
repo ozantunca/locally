@@ -44,20 +44,31 @@
         , l = arr.length;
       while (l--) newArr[l] = iteratee(arr[l], l);
       return newArr;
+    },
+    filter: function (arr, iteratee) {
+      var newArr = []
+        , l = arr.length;
+      while (l--) {
+        if (iteratee(arr[l], l))
+          newArr.push(iteratee);
+      }
+      return newArr;
     }
   }
 
+  var _keys, _config;
+
   var Locally = function (options) {
     // load current localStorage state
-    this._config = ls.getItem('locally-config');
+    _config = ls.getItem('locally-config');
 
     // start anew if no config
-    if (!this._config) {
-      this._config = {};
-      this._keys = [];
+    if (!_config) {
+      _config = {};
+      _keys = [];
     }
     else {
-      this._config = JSON.parse(this._config);
+      _config = JSON.parse(_config);
 
       var l = ls.length
         , keys = new Array(l);
@@ -65,15 +76,19 @@
       // Cache localStorage keys for faster access
       while (l--) {
         keys[l] = ls.key(l);
-        this._config[keys[l]] = this._config[keys[l]] || {};
+        _config[keys[l]] = _config[keys[l]] || {};
       }
 
       // Exclude locally-config from keys array
       keys.splice(keys.indexOf('locally-config'), 1);
-      this._keys = keys;
+      _keys = keys;
     }
 
-    _saveConfig(this._config);
+    _saveConfig = _saveConfig.bind(this);
+    _remove = _remove.bind(this);
+    _get = _get.bind(this);
+
+    _saveConfig();
   };
 
   Locally.prototype.set = function (key, value, options) {
@@ -82,17 +97,21 @@
 
     options = options || {};
 
+    if (typeof options === 'number') {
+      options = { ttl: options };
+    }
+
     // Set TTL
-    this._config[key] = this._config[key] || {};
+    _config[key] = _config[key] || {};
 
     // Add to keys array
-    if (this._keys.indexOf(key) == -1) {
-      this._keys.push(key);
+    if (_keys.indexOf(key) == -1) {
+      _keys.push(key);
     }
 
     // Set TTL
     if (options.ttl && !isNaN(options.ttl)) {
-      this._config[key].ttl = Date.now() + options.ttl;
+      _config[key].ttl = Date.now() + options.ttl;
     }
 
     // LocalStorage saves and returns values as strings.
@@ -103,56 +122,56 @@
         // Keep Date objects as timestamps
         if (value instanceof Date) {
           value = value.getTime();
-          this._config[key].t = 'd';
+          _config[key].t = 'd';
         }
         // Keep RegExp objects as strings
         else if (value instanceof RegExp) {
           value = value.toString();
-          this._config[key].t = 'r';
+          _config[key].t = 'r';
         }
         // Otherwise keep them as JSON
         else {
           value = JSON.stringify(value);
-          this._config[key].t = 'o';
+          _config[key].t = 'o';
         }
         break;
 
       case 'function':
-        this._config[key].t = 'f';
+        _config[key].t = 'f';
         break;
 
       case 'number':
-        this._config[key].t = 'n';
+        _config[key].t = 'n';
         break;
 
       case 'boolean':
         value = value ? 1 : 0;
-        this._config[key].t = 'b';
+        _config[key].t = 'b';
         break;
 
       case 'string':
       default:
-        this._config[key].t = 's';
+        _config[key].t = 's';
     }
 
     ls.setItem(key, value);
-    _saveConfig(this._config);
+    _saveConfig();
   }
 
   Locally.prototype.get = function (key) {
-    return Array.isArray(key) ? utils.map(key, function (item) { return _get.call(this, item); }.bind(this)) : _get.call(this, key);
+    return Array.isArray(key) ? utils.map(key, function (item) { return _get(item); }.bind(this)) : _get(key);
   }
 
   Locally.prototype.keys = function (pattern) {
     // Return all keys
-    if (!pattern || pattern == '*') return this._keys.slice(0);
+    if (!pattern || pattern == '*') return _keys.slice(0);
 
     // RegExp pattern to be queried
     if (!(pattern instanceof RegExp)) {
       pattern = new RegExp('.*' + pattern + '.*');
     }
 
-    return this._keys.filter(function (key) {
+    return _keys.filter(function (key) {
       return pattern.test(key);
     });
   }
@@ -161,32 +180,56 @@
     if (typeof key === 'undefined')
       throw new Error('\'remove\' requires a key');
 
-    _remove(key);
+    if (Array.isArray(key)) {
+      utils.each(key, _remove);
+    } else {
+      _remove(key);
+    }
+  }
+
+  Locally.prototype.scan = function (key, fn) {
+    return utils.each(this.keys(key), fn);
+  }
+
+  Locally.prototype.ttl = function (key) {
+    return _config[key] ? _config[key].ttl ? _config[key].ttl - Date.now() : null : -1;
+  }
+
+  Locally.prototype.persist = function (key) {
+    return _config[key] && delete _config[key].ttl && _saveConfig();
+  }
+
+  Locally.prototype.expire = function (key, ttl) {
+    return _config[key] && (_config[key].ttl = Date.now() + ttl) && _saveConfig();
+  }
+
+  Locally.prototype.clear = function () {
+    return ls.clear(), _config = {}, _saveConfig(), _keys = [];
   }
 
   // Removes a value from localStorage
   function _remove(key) {
     ls.removeItem(key);
-    this._keys.splice(this._keys.indexOf(key), 1);
+    _keys.splice(_keys.indexOf(key), 1);
   }
 
   // Saves config to localStorage
-  function _saveConfig(config) {
-    ls.setItem('locally-config', JSON.stringify(config));
+  function _saveConfig() {
+    ls.setItem('locally-config', JSON.stringify(_config));
   }
 
   function _get(key) {
     // Return null if no key is given
-    if (typeof key === 'undefined' || !this._config[key]) return null;
+    if (typeof key === 'undefined' || !_config[key]) return null;
 
     // Check for TTL
     // If TTL is exceeded delete data
     // and return null
-    if (this._config[key].ttl < Date.now()) {
-      delete this._config[key];
+    if (_config[key].ttl < Date.now()) {
+      delete _config[key];
 
-      _saveConfig(this._config);
-      _remove.call(this, key);
+      _saveConfig();
+      _remove(key);
 
       return null;
     }
@@ -194,7 +237,7 @@
     var value = ls.getItem(key), temp;
 
     // Return value in correct type
-    switch (this._config[key].t) {
+    switch (_config[key].t) {
       case 'o':
         return JSON.parse(value);
         break;
