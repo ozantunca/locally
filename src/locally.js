@@ -272,16 +272,20 @@
 
   if (typeof exports === 'object') {
     // CommonJS
-    module.exports = Locally;
+    module.exports.Store = Locally;
   }
   else if (typeof define === 'function' && define.amd) {
      // AMD. Register as an anonymous module.
     define(function() {
-      return Locally;
+      return {
+        Store: Locally
+      };
     });
   }
   else {
     // Browser global.
-    window.Locally = Locally;
+    window.Locally = {
+      Store: Locally
+    };
   }
 })();

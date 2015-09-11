@@ -147,7 +147,7 @@ if (typeof localStorage === "undefined" || localStorage === null) {
   localStorage = new LocalStorage('./test/storage');
 }
 
-var Store = require('../src/locally')
+var Store = require('../src/locally').Store
   , store = new Store();
 
 describe('locally', function() {
