@@ -8,7 +8,7 @@ W3C specification suggest 5MB of quota for every origin. Even though it's not a 
 Locally works much like a caching software (e.g. Redis) 
 
 ### Features
-- Defining timeout for values to ensure some values will expire in time.
+- [Defining timeout for values to ensure some values will expire in time.](#user-content-timeout-support)
 - Type checking store and return ```Number```, ```String```, ```Array```, ```Object```, ```Date```, ```RegExp``` and ```Function``` values in their given forms.
 - A much simpler API than originial localStorage while keeping all it's functions intact.
 
@@ -39,16 +39,16 @@ setTimeout(function () {
 
 ### Functions and Properties
 
-- .set(key, value[, options])
-- .get(key)
-- .remove(key)
-- .clear()
-- .ttl(key)
-- .persist(key)
-- .expire(key, timeout)
-- .keys([keyPattern])
-- .scan(keyPattern, function)
-- .length
+- [.set(key, value[, options])](#setkey-value-options)
+- [.get(key)](#getkey)
+- [.remove(key)](#removekey)
+- [.clear()](#clear)
+- [.ttl(key)](#ttlkey)
+- [.persist(key)](#persistkey)
+- [.expire(key, timeout)](#expirekey-timeout)
+- [.keys([keyPattern])](#keyskeypattern)
+- [.scan(keyPattern, function)](#scankeypattern-function)
+- [.length](#length)
 
 ### Usage
 
@@ -146,7 +146,7 @@ store.persist('key');
 
 store.ttl('key'); // null
 ```
-#### .expire(key, ttl)
+#### .expire(key, timeout)
 Adds timeout to key, making it expiring if it wasn't, or updating it's timeout value.
 ```js
 store.set('key', 'value');
