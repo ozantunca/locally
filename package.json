@@ -1,5 +1,5 @@
 {
-  "name": "locally",
+  "name": "locallyjs",
   "description": "Locally is a JavaScript library that provides an easy way manage a cache system over localStorage.",
   "version": "0.1.0",
   "main": "./dist/locally.min.js",
