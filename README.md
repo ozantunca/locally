@@ -18,8 +18,8 @@ Locally works much like a caching software (e.g. Redis)
 
 Locally is installable via 
 
-- [npm](http://bower.io/): `npm install async`
-- [bower](http://bower.io/): `bower install async`
+- [npm](http://bower.io/): `npm install locallyjs`
+- [bower](http://bower.io/): `bower install locallyjs`
 
 ### Quick Examples
 ```javascript
