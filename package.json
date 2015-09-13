@@ -2,7 +2,7 @@
   "name": "locally",
   "description": "Locally is a JavaScript library that provides an easy way manage a cache system over localStorage.",
   "version": "0.1.0",
-  "main": "./dist/locally.js",
+  "main": "./dist/locally.min.js",
   "author": "Ozan Tunca <ozan@ozantunca.org> (http://www.ozantunca.org/)",
   "devDependencies": {
     "chai": "^2.1.2",
@@ -28,7 +28,7 @@
   ],
   "scripts": {
     "test": "mocha test/locally-mocha.js",
-    "build": "uglifyjs dist/locally.js -o dist/locally.min.js"
+    "prepublish": "cp src/locally.js dist/locally.js; uglifyjs dist/locally.js -o dist/locally.min.js"
   },
   "readmeFilename": "README.md",
   "homepage": "https://github.com/ozantunca/locally"

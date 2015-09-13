@@ -66,6 +66,7 @@
     if (!_config) {
       _config = {};
       _keys = [];
+      this.length = 0;
     }
     else {
       _config = JSON.parse(_config);
@@ -82,6 +83,7 @@
       // Exclude locally-config from keys array
       keys.splice(keys.indexOf('locally-config'), 1);
       _keys = keys;
+      this.length = _keys.length;
     }
 
     _saveConfig = _saveConfig.bind(this);
@@ -107,6 +109,7 @@
     // Add to keys array
     if (_keys.indexOf(key) == -1) {
       _keys.push(key);
+      this.length = _keys.length;
     }
 
     // Set TTL
@@ -171,7 +174,7 @@
       pattern = new RegExp('.*' + pattern + '.*');
     }
 
-    return _keys.filter(function (key) {
+    return utils.filter(_keys, function (key) {
       return pattern.test(key);
     });
   }
@@ -192,30 +195,41 @@
   }
 
   Locally.prototype.ttl = function (key) {
-    return _config[key] ? _config[key].ttl ? _config[key].ttl - Date.now() : null : -1;
+    return _config[key] ? _config[key].ttl ? _config[key].ttl - Date.now() : -1 : -2;
   }
 
   Locally.prototype.persist = function (key) {
-    return _config[key] && delete _config[key].ttl && _saveConfig();
+    return _config[key] ? delete _config[key].ttl && _saveConfig() : false;
   }
 
   Locally.prototype.expire = function (key, ttl) {
-    return _config[key] && (_config[key].ttl = Date.now() + ttl) && _saveConfig();
+    return _config[key] ? !!(_config[key].ttl = Date.now() + ttl) && _saveConfig() : false;
   }
 
   Locally.prototype.clear = function () {
-    return ls.clear(), _config = {}, _saveConfig(), _keys = [];
+    ls.clear();
+    this.length = 0;
+
+    _config = {};
+    _keys = [];
+    return _saveConfig();
+  }
+
+  Locally.prototype.key = function (index) {
+    return _keys[index];
   }
 
   // Removes a value from localStorage
   function _remove(key) {
     ls.removeItem(key);
     _keys.splice(_keys.indexOf(key), 1);
+    this.length = _keys.length;
   }
 
   // Saves config to localStorage
   function _saveConfig() {
     ls.setItem('locally-config', JSON.stringify(_config));
+    return true;
   }
 
   function _get(key) {
@@ -270,18 +284,26 @@
     return value;
   }
 
+  function updateLength(len) {
+    this.length = len;
+  }
+
   if (typeof exports === 'object') {
     // CommonJS
-    module.exports = Locally;
+    module.exports.Store = Locally;
   }
   else if (typeof define === 'function' && define.amd) {
      // AMD. Register as an anonymous module.
     define(function() {
-      return Locally;
+      return {
+        Store: Locally
+      };
     });
   }
   else {
     // Browser global.
-    window.Locally = Locally;
+    window.Locally = {
+      Store: Locally
+    };
   }
 })();
