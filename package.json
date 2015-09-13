@@ -27,8 +27,7 @@
     }
   ],
   "scripts": {
-    "test": "mocha test/locally-mocha.js",
-    "prepublish": "cp src/locally.js dist/locally.js; uglifyjs dist/locally.js -o dist/locally.min.js"
+    "test": "mocha test/locally-mocha.js"
   },
   "readmeFilename": "README.md",
   "homepage": "https://github.com/ozantunca/locally"
