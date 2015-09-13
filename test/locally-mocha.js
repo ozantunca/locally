@@ -133,7 +133,7 @@ function deepCompare () {
 
 function expectedKeys(len) {
   assert.lengthOf(localStorage, len);
-  assert.lengthOf(store.keys(), len - 1);
+  assert.lengthOf(store, len - 1);
 }
 
 if (!fs.existsSync('test/storage')) {
@@ -341,33 +341,43 @@ describe('locally', function() {
 
       setTimeout(function () {
         assert.isNull(store.get('somekey'));
-        assert.equal(store.ttl('notexist'), -1);
+        assert.equal(store.ttl('notexist'), -2);
         done();
       }, 1001);
     });
 
-    it('should return -1 if key does not exist', function () {
-      assert.equal(store.ttl('notexist'), -1);
+    it('should return -2 if key does not exist', function () {
+      assert.equal(store.ttl('notexist'), -2);
+    });
+
+    it('should return -1 if key exists but has no associated expire', function () {
+      store.set('somekey', 'somevalue');
+
+      assert.equal(store.ttl('somekey'), -1);
     });
   });
 
   describe('persist()', function () {
     it('should persist value of a key', function (done) {
       store.set('somekey', 'somevalue', 1000);
-      store.persist('somekey');
 
-      assert.isNull(store.ttl('somekey'));
+      assert.equal(store.persist('somekey'), 1);
+      assert.equal(store.ttl('somekey'), -1);
 
       setTimeout(function () {
         assert.isNotNull(store.get('somekey'));
         done();
       }, 1001);
     });
+
+    it('should return 0 if key does not exist', function () {
+      assert.equal(store.persist('notexist'), 0);
+    });
   });
 
   describe('expire()', function (done) {
     it('should expire when time is done', function (done) {
-      store.expire('somekey', 1000);
+      assert.equal(store.expire('somekey', 1000), 1);
 
       setTimeout(function () {
         assert.isNotNull(store.get('somekey'));
@@ -379,10 +389,24 @@ describe('locally', function() {
         done();
       }, 1001);
     });
+
+    it('should return 0 if key does not exist', function () {
+      assert.equal(store.expire('notexist'), 0);
+    });
+  });
+
+  describe('key()', function () {
+    it('should return same result with localStorage', function () {
+      assert.equal(localStorage.length, store.length + 1);
+
+      for (var i = 0; i < store.length; i++) {
+        assert.equal(localStorage.key(i + 1), store.key(i));
+      }
+    });
   });
 
   describe('not breaking current data', function () {
-    it('should read current data', function () {1
+    it('should read current data', function () {
       localStorage.setItem('outsideItem1', 'testItem1');
       localStorage.setItem('outsideItem2', 123);
 
