@@ -1,13 +1,15 @@
 
 var assert = require('chai').assert
   , _ = require('underscore')
-  , fs = require('fs');
+  , argv = require('optimist').argv
+  , fs = require('fs')
+  , Store, store;
 
 var deleteFolderRecursive = function(path) {
-  if( fs.existsSync(path) ) {
+  if ( fs.existsSync(path) ) {
     fs.readdirSync(path).forEach(function (file,index) {
       var curPath = path + "/" + file;
-      if(fs.lstatSync(curPath).isDirectory()) { // recurse
+      if (fs.lstatSync(curPath).isDirectory()) { // recurse
         deleteFolderRecursive(curPath);
       } else { // delete file
         fs.unlinkSync(curPath);
@@ -147,8 +149,8 @@ if (typeof localStorage === "undefined" || localStorage === null) {
   localStorage = new LocalStorage('./test/storage');
 }
 
-var Store = require('../src/locally').Store
-  , store = new Store();
+Store = require('../src/locally').Store
+store = new Store();
 
 describe('locally', function() {
 
@@ -193,6 +195,53 @@ describe('locally', function() {
         assert.lengthOf(localStorage, len);
         done();
       }, 1010);
+    });
+
+    it('should cache a value using ms(\'2s\')', function (done) {
+      this.timeout(3000);
+
+      var len = localStorage.length;
+      store.set('key5', 'value', '2s');
+
+      expectedKeys(len + 1);
+      assert.isNotNull(store.get('key5'));
+
+      setTimeout(function () {
+        assert.isNull(store.get('key5'));
+        expectedKeys(len);
+
+        done();
+      }, 2010);
+    });
+
+    it('should cache a value using ms(\'1m\')', function (done) {
+      var len = localStorage.length;
+      store.set('key5', 'value', '1m');
+
+      expectedKeys(len + 1);
+      assert.isNotNull(store.get('key5'));
+
+      setTimeout(function () {
+        assert.isNotNull(store.get('key5'));
+        assert.isBelow(store.ttl('key5'), 60000);
+        assert.isAbove(store.ttl('key5'), 59000);
+
+        done();
+      }, 500);
+    });
+
+    it('should cache a value using ms(\'2 days\')', function (done) {
+      var len = localStorage.length;
+      store.set('key6', 'value', '2 days');
+
+      expectedKeys(len + 1);
+      assert.isNotNull(store.get('key6'));
+
+      setTimeout(function () {
+        assert.isBelow(store.ttl('key6'), 60 * 60 * 24 * 2 * 1000);
+
+        done();
+      }, 1000);
     });
   });
 
@@ -288,17 +337,17 @@ describe('locally', function() {
 
       var keys = store.keys(/^key.*/);
       assert.typeOf(keys, 'array');
-      assert.lengthOf(keys, 3);
+      assert.lengthOf(keys, 5);
 
       var keys = store.keys(/.*key.*/);
       assert.typeOf(keys, 'array');
-      assert.lengthOf(keys, 5);
+      assert.lengthOf(keys, 7);
 
       // when given string, locally should add .*
       // on both ends and query like that
       var keys = store.keys('key');
       assert.typeOf(keys, 'array');
-      assert.lengthOf(keys, 5);
+      assert.lengthOf(keys, 7);
     });
   });
 
@@ -311,7 +360,7 @@ describe('locally', function() {
         assert.isNotNull(item);
       });
 
-      assert.equal(count, 5);
+      assert.equal(count, 7);
     });
   });
 

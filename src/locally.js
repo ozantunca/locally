@@ -3,6 +3,7 @@
 
 (function () {
   var ls = localStorage;
+  var ms = require('ms');
 
   // Provide an in-memory fallback for
   // older browsers.
@@ -69,20 +70,18 @@
       this.length = 0;
     }
     else {
+      var l = ls.length;
       _config = JSON.parse(_config);
-
-      var l = ls.length
-        , keys = new Array(l);
+      _keys = new Array(l);
 
       // Cache localStorage keys for faster access
       while (l--) {
-        keys[l] = ls.key(l);
-        _config[keys[l]] = _config[keys[l]] || {};
+        _keys[l] = ls.key(l);
+        _config[_keys[l]] = _config[_keys[l]] || {};
       }
 
-      // Exclude locally-config from keys array
-      keys.splice(keys.indexOf('locally-config'), 1);
-      _keys = keys;
+      // Exclude locally-config from _keys array
+      _keys.splice(_keys.indexOf('locally-config'), 1);
       this.length = _keys.length;
     }
 
@@ -101,6 +100,8 @@
 
     if (typeof options === 'number') {
       options = { ttl: options };
+    } else if (typeof options === 'string') {
+      options = { ttl: ms(options) };
     }
 
     // Set TTL
@@ -282,10 +283,6 @@
         break;
     }
     return value;
-  }
-
-  function updateLength(len) {
-    this.length = len;
   }
 
   if (typeof exports === 'object') {
