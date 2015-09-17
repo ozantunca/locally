@@ -1,22 +1,21 @@
 
-var assert = require('chai').assert
-  , _ = require('underscore')
-  , argv = require('optimist').argv
-  , fs = require('fs')
-  , Store, store;
+if (typeof exports === 'object') {
+  var assert, localStorage, store, Store;
 
-var deleteFolderRecursive = function(path) {
-  if ( fs.existsSync(path) ) {
-    fs.readdirSync(path).forEach(function (file,index) {
-      var curPath = path + "/" + file;
-      if (fs.lstatSync(curPath).isDirectory()) { // recurse
-        deleteFolderRecursive(curPath);
-      } else { // delete file
-        fs.unlinkSync(curPath);
-      }
-    });
-  }
-};
+  module.exports = function (vars) {
+    assert = vars.assert;
+    localStorage = vars.localStorage;
+    Store = vars.Store;
+    store = new Store();
+
+    runTests();
+  };
+} else runTests();
+
+function expectedKeys (len) {
+  assert.lengthOf(localStorage, len);
+  assert.lengthOf(store, len - 1);
+}
 
 function deepCompare () {
   var i, l, leftChain, rightChain;
@@ -133,27 +132,7 @@ function deepCompare () {
   return true;
 }
 
-function expectedKeys(len) {
-  assert.lengthOf(localStorage, len);
-  assert.lengthOf(store, len - 1);
-}
-
-if (!fs.existsSync('test/storage')) {
-  fs.mkdirSync('test/storage');
-}
-
-deleteFolderRecursive('test/storage');
-
-if (typeof localStorage === "undefined" || localStorage === null) {
-  var LocalStorage = require('node-localstorage').LocalStorage;
-  localStorage = new LocalStorage('./test/storage');
-}
-
-Store = require('../src/locally').Store
-store = new Store();
-
-describe('locally', function() {
-
+function runTests () {
   describe('setting values', function() {
     it('should add one value to localStorage', function () {
       var len = localStorage.length;
@@ -446,10 +425,24 @@ describe('locally', function() {
 
   describe('key()', function () {
     it('should return same result with localStorage', function () {
+      var arr1 = [], arr2 = [];
       assert.equal(localStorage.length, store.length + 1);
 
-      for (var i = 0; i < store.length; i++) {
-        assert.equal(localStorage.key(i + 1), store.key(i));
+      for (var i = 0, j = 0; j < store.length; i++, j++) {
+        if (localStorage.key(i) === 'locally-config')
+          i++;
+
+        arr1.push(localStorage.key(i));
+        arr2.push(store.key(j));
+      }
+
+      assert.equal(arr1.length, arr2.length);
+
+      arr1.sort();
+      arr2.sort();
+
+      for (var i = 0; i < arr1.length; i++) {
+        assert.strictEqual(arr1[i], arr2[i]);
       }
     });
   });
@@ -474,11 +467,4 @@ describe('locally', function() {
       expectedKeys(1);
     });
   });
-
-  after(function () {
-    deleteFolderRecursive('test/storage');
-    fs.rmdirSync('test/storage');
-  });
-
-});
-
+}
