@@ -1,9 +1,8 @@
-
 'use strict';
 
 (function () {
-  var ls = localStorage;
-  var ms = require('ms');
+  var ls = typeof window !== 'undefined' ? window.localStorage : null
+    , ms = require('ms');
 
   // Provide an in-memory fallback for
   // older browsers.
@@ -285,20 +284,20 @@
     return value;
   }
 
+  // CommonJS
   if (typeof exports === 'object') {
-    // CommonJS
     module.exports.Store = Locally;
   }
-  else if (typeof define === 'function' && define.amd) {
-     // AMD. Register as an anonymous module.
+   // AMD. Register as an anonymous module.
+  if (typeof define === 'function' && define.amd) {
     define(function() {
       return {
         Store: Locally
       };
     });
   }
-  else {
-    // Browser global.
+  // Browser global.
+  if (typeof window === 'object') {
     window.Locally = {
       Store: Locally
     };
