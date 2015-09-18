@@ -141,7 +141,7 @@ store.ttl('key')
 Remove timeout of given key, making the value non-expiring.
 ```js
 store.set('key', 'value', 1000);
-t
+
 store.persist('key');
 
 store.ttl('key'); // null
