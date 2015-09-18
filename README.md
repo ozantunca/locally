@@ -1,7 +1,7 @@
 Locally
 ============
 [![npm version](https://badge.fury.io/js/locallyjs.svg)](https://www.npmjs.org/package/locallyjs)
-[![Travis](https://img.shields.io/travis/ozantunca/locally.svg?style=flat)](https://travis-ci.org/ozantunca/locally)
+[![Travis](https://travis-ci.org/ozantunca/locally.svg?branch=master)](https://travis-ci.org/ozantunca/locally)
 
 Locally is a localStorage manager that supports expirable values with TTL and compresses them using LZW.
 W3C specification suggest 5MB of quota for every origin. Even though it's not a must, browsers tend to stay around that number thus giving our site that is exhaustible in the long run. Locally's TTL support will take care of that. 
@@ -14,7 +14,6 @@ Locally works much like a caching software (e.g. Redis)
 
 ##### Upcoming
 - Compression via LZW algorithm.
-- Simpler way to define timeout using [ms](https://www.npmjs.com/package/ms)
 
 Locally is installable via 
 
@@ -43,7 +42,7 @@ setTimeout(function () {
 - [.get(key)](#getkey)
 - [.remove(key)](#removekey)
 - [.clear()](#clear)
-- [.ttl(key)](#ttlkey)
+- [.ttl(key[, returnString])](#ttlkey-returnstring)
 - [.persist(key)](#persistkey)
 - [.expire(key, timeout)](#expirekey-timeout)
 - [.keys([keyPattern])](#keyskeypattern)
@@ -53,6 +52,12 @@ setTimeout(function () {
 ### Usage
 
 #### Initialization
+Basic initialization with window global is:
+```js
+var Store = window.Locally.Store
+  , store = new Store();
+```
+or if you are already using **browserify**
 ```js
 var Store = require('locally').Store
   , store = new Store();
@@ -81,6 +86,12 @@ store.set('key', 'value', {
 or can be given as the third parameter as a shorthand;
 ```js
 store.set('key', 'value', 1000);
+```
+You can also specify TTL with string thanks to [ms.js](https://github.com/rauchg/ms.js).
+```js
+store.set('key', 'value', '5s');
+store.set('key', 'value', '2m');
+store.set('key', 'value', '1 hour');
 ```
 #### .get(key)
 Returns the corresponding value of given key.
@@ -126,12 +137,13 @@ Returns key at the given index. Similar to same function of native **localStorag
 ```js
 store.key(0); // "key"
 ```
-#### .ttl(key)
-Returns timeout for given key. 
+#### .ttl(key[, returnString])
+Returns timeout for given key. If second parameter is ```true ``` **.ttl()** will return a logical reply using **ms** module.
 ```js
 store.set('key', 'value', 1000);
 
 store.ttl('key'); // <= 1000
+store.ttl('key', true); // '1s'
 ```
 It will return ```-1``` if the value has no TTL and persists or ```-2``` if there is no value associated with the key.
 ```js
@@ -213,3 +225,13 @@ store.length; // 2
 
 ### How Locally Works
 Locally holds an extra object in localStorage called ```locally-config``` to save TTL and type information. It automatically updates config on page load using current values in localStorage to make sure it doesn't miss any value added to localStorage without using Locally.
+
+### Testing
+If you want to run unit tests yourself run command below after installing **Locally**.
+```sh
+cd node_modules/locallyjs
+npm install
+npm test
+open test/browser.html
+```
+This will run tests on all distributables. Last command will **open** default web browser and run mocha tests on the browser.
