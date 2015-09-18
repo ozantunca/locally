@@ -42,7 +42,7 @@ setTimeout(function () {
 - [.get(key)](#getkey)
 - [.remove(key)](#removekey)
 - [.clear()](#clear)
-- [.ttl(key)](#ttlkey)
+- [.ttl(key[, returnString])](#ttlkey-returnstring)
 - [.persist(key)](#persistkey)
 - [.expire(key, timeout)](#expirekey-timeout)
 - [.keys([keyPattern])](#keyskeypattern)
@@ -137,12 +137,13 @@ Returns key at the given index. Similar to same function of native **localStorag
 ```js
 store.key(0); // "key"
 ```
-#### .ttl(key)
-Returns timeout for given key. 
+#### .ttl(key[, returnString])
+Returns timeout for given key. If second parameter is ```true ``` **.ttl()** will return a logical reply using **ms** module.
 ```js
 store.set('key', 'value', 1000);
 
 store.ttl('key'); // <= 1000
+store.ttl('key', true); // '1s'
 ```
 It will return ```-1``` if the value has no TTL and persists or ```-2``` if there is no value associated with the key.
 ```js
