@@ -30,7 +30,8 @@
   ],
   "scripts": {
     "test": "mocha test/node-mocha.js; mocha test/node-mocha.js; --dist; mocha test/node-mocha.js --distmin;",
-    "build": "browserify src/locally.js -t babelify -o dist/locally.js -s 'locallyjs'; browserify src/locally.js -t babelify -t uglifyify -o dist/locally.js -s 'locallyjs';"
+    "build": "browserify src/locally.js -t babelify -o dist/locally.js -s 'locallyjs'; browserify src/locally.js -t babelify -t uglifyify -o dist/locally.js -s 'locallyjs';",
+    "simpletest": "mocha test/node-mocha.js"
   },
   "readmeFilename": "README.md",
   "homepage": "https://github.com/ozantunca/locally"
