@@ -1,7 +1,7 @@
 {
   "name": "locallyjs",
   "description": "Locally is a JavaScript library that provides an easy way manage a cache system over localStorage.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "./dist/locally.min.js",
   "author": "Ozan Tunca <ozan@ozantunca.org> (http://www.ozantunca.org/)",
   "devDependencies": {
@@ -29,7 +29,7 @@
     }
   ],
   "scripts": {
-    "test": "mocha test/node-mocha.js; mocha test/node-mocha.js; --dist; mocha test/node-mocha.js --es6; mocha test/node-mocha.js --es6min; mocha test/node-mocha.js --distmin; open test/browser.html;",
+    "test": "mocha test/node-mocha.js; mocha test/node-mocha.js; --dist; mocha test/node-mocha.js --distmin;",
     "build": "browserify src/locally.js -t babelify -o dist/locally.js -s 'locallyjs'; browserify src/locally.js -t babelify -t uglifyify -o dist/locally.js -s 'locallyjs';"
   },
   "readmeFilename": "README.md",
