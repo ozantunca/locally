@@ -97,10 +97,12 @@
 
     options = options || {};
 
-    if (typeof options === 'number') {
+    if (typeof options !== 'object') {
       options = { ttl: options };
-    } else if (typeof options === 'string') {
-      options = { ttl: ms(options) };
+    }
+
+    if (typeof options.ttl === 'string') {
+      options.ttl = ms(options.ttl);
     }
 
     // Set TTL

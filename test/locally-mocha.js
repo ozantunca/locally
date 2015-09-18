@@ -161,9 +161,24 @@ function runTests () {
       assert.strictEqual(store.get('key2'), 'some value');
     });
 
-    it('should cache a value', function (done) {
+    it('should cache a value with options object', function (done) {
       var len = localStorage.length;
       store.set('key4', 'value', { ttl: 1000 });
+
+      // tests
+      expectedKeys(len + 1);
+      assert.isNotNull(store.get('key4'));
+
+      setTimeout(function () {
+        assert.isNull(store.get('key4'));
+        assert.lengthOf(localStorage, len);
+        done();
+      }, 1010);
+    });
+
+    it('should cache a value with options object when ttl is string', function (done) {
+      var len = localStorage.length;
+      store.set('key4', 'value', { ttl: '1s' });
 
       // tests
       expectedKeys(len + 1);
