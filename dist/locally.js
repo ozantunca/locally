@@ -1,132 +1,309 @@
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.locallyjs = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-/**
- * Helpers.
- */
+'use strict';
 
-var s = 1000;
-var m = s * 60;
-var h = m * 60;
-var d = h * 24;
-var y = d * 365.25;
+(function () {
+  var ls = typeof window !== 'undefined' ? window.localStorage : null
+    , ms = require('ms');
 
-/**
- * Parse or format the given `val`.
- *
- * Options:
- *
- *  - `long` verbose formatting [false]
- *
- * @param {String|Number} val
- * @param {Object} options
- * @return {String|Number}
- * @api public
- */
-
-module.exports = function(val, options){
-  options = options || {};
-  if ('string' == typeof val) return parse(val);
-  return options.long
-    ? long(val)
-    : short(val);
-};
-
-/**
- * Parse the given `str` and return milliseconds.
- *
- * @param {String} str
- * @return {Number}
- * @api private
- */
-
-function parse(str) {
-  str = '' + str;
-  if (str.length > 10000) return;
-  var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(str);
-  if (!match) return;
-  var n = parseFloat(match[1]);
-  var type = (match[2] || 'ms').toLowerCase();
-  switch (type) {
-    case 'years':
-    case 'year':
-    case 'yrs':
-    case 'yr':
-    case 'y':
-      return n * y;
-    case 'days':
-    case 'day':
-    case 'd':
-      return n * d;
-    case 'hours':
-    case 'hour':
-    case 'hrs':
-    case 'hr':
-    case 'h':
-      return n * h;
-    case 'minutes':
-    case 'minute':
-    case 'mins':
-    case 'min':
-    case 'm':
-      return n * m;
-    case 'seconds':
-    case 'second':
-    case 'secs':
-    case 'sec':
-    case 's':
-      return n * s;
-    case 'milliseconds':
-    case 'millisecond':
-    case 'msecs':
-    case 'msec':
-    case 'ms':
-      return n;
+  // Provide an in-memory fallback for
+  // older browsers.
+  if (!ls) {
+    ls = {
+      _data: {},
+      setItem: function(id, val) {
+        return this._data[id] = String(val);
+      },
+      getItem: function(id) {
+        return this._data.hasOwnProperty(id) ? this._data[id] : undefined;
+      },
+      removeItem: function(id) {
+        return delete this._data[id];
+      },
+      key: function (index) {
+        for (var key in this_data) {
+          if (!(index--)) {
+            return key;
+          }
+        }
+      },
+      clear: function() {
+        return this._data = {};
+      }
+    };
   }
-}
 
-/**
- * Short format for `ms`.
- *
- * @param {Number} ms
- * @return {String}
- * @api private
- */
+  // Fastest utility functions for this case.
+  // Faster than underscore and lodash.
+  // Besides, do I even need them here?
+  var utils = {
+    each: function (arr, iteratee) {
+      var l = arr.length;
+      while (l--) iteratee(arr[l], l);
+    },
+    map : function (arr, iteratee) {
+      var newArr = new Array(arr.length)
+        , l = arr.length;
+      while (l--) newArr[l] = iteratee(arr[l], l);
+      return newArr;
+    },
+    filter: function (arr, iteratee) {
+      var newArr = []
+        , l = arr.length;
+      while (l--) {
+        if (iteratee(arr[l], l))
+          newArr.push(iteratee);
+      }
+      return newArr;
+    }
+  }
 
-function short(ms) {
-  if (ms >= d) return Math.round(ms / d) + 'd';
-  if (ms >= h) return Math.round(ms / h) + 'h';
-  if (ms >= m) return Math.round(ms / m) + 'm';
-  if (ms >= s) return Math.round(ms / s) + 's';
-  return ms + 'ms';
-}
+  var _keys, _config;
 
-/**
- * Long format for `ms`.
- *
- * @param {Number} ms
- * @return {String}
- * @api private
- */
+  var Locally = function (options) {
+    // load current localStorage state
+    _config = ls.getItem('locally-config');
 
-function long(ms) {
-  return plural(ms, d, 'day')
-    || plural(ms, h, 'hour')
-    || plural(ms, m, 'minute')
-    || plural(ms, s, 'second')
-    || ms + ' ms';
-}
+    // start anew if no config
+    if (!_config) {
+      _config = {};
+      _keys = [];
+      this.length = 0;
+    }
+    else {
+      var l = ls.length;
+      _config = JSON.parse(_config);
+      _keys = new Array(l);
 
-/**
- * Pluralization helper.
- */
+      // Cache localStorage keys for faster access
+      while (l--) {
+        _keys[l] = ls.key(l);
+        _config[_keys[l]] = _config[_keys[l]] || {};
+      }
 
-function plural(ms, n, name) {
-  if (ms < n) return;
-  if (ms < n * 1.5) return Math.floor(ms / n) + ' ' + name;
-  return Math.ceil(ms / n) + ' ' + name + 's';
-}
+      // Exclude locally-config from _keys array
+      _keys.splice(_keys.indexOf('locally-config'), 1);
+      this.length = _keys.length;
+    }
 
-},{}],2:[function(require,module,exports){
-"use strict";!function(){function _remove(e){ls.removeItem(e),_keys.splice(_keys.indexOf(e),1),this.length=_keys.length}function _saveConfig(){return ls.setItem("locally-config",JSON.stringify(_config)),!0}function _get(key){if("undefined"==typeof key||!_config[key])return null;if(_config[key].ttl<Date.now())return delete _config[key],_saveConfig(),_remove(key),null;var value=ls.getItem(key),temp;switch(_config[key].t){case"o":return JSON.parse(value);case"d":return new Date(parseInt(value,10));case"r":return new RegExp(value.substring(1,value.length-1));case"f":return eval("temp = "+value),temp;case"n":return Number(value);case"s":return String(value);case"b":return"1"==value}return value}var ls="undefined"!=typeof window?window.localStorage:null,ms=require("ms");ls||(ls={_data:{},setItem:function(e,t){return this._data[e]=String(t)},getItem:function(e){return this._data.hasOwnProperty(e)?this._data[e]:void 0},removeItem:function(e){return delete this._data[e]},key:function e(t){for(var e in this_data)if(!t--)return e},clear:function(){return this._data={}}});var utils={each:function(e,t){for(var n=e.length;n--;)t(e[n],n)},map:function(e,t){for(var n=new Array(e.length),o=e.length;o--;)n[o]=t(e[o],o);return n},filter:function(e,t){for(var n=[],o=e.length;o--;)t(e[o],o)&&n.push(t);return n}},_keys,_config,Locally=function(e){if(_config=ls.getItem("locally-config")){var t=ls.length;for(_config=JSON.parse(_config),_keys=new Array(t);t--;)_keys[t]=ls.key(t),_config[_keys[t]]=_config[_keys[t]]||{};_keys.splice(_keys.indexOf("locally-config"),1),this.length=_keys.length}else _config={},_keys=[],this.length=0;_saveConfig=_saveConfig.bind(this),_remove=_remove.bind(this),_get=_get.bind(this),_saveConfig()};Locally.prototype.set=function(e,t,n){if(!e||!t)return new Error("no key or value given");switch(n=n||{},"object"!=typeof n&&(n={ttl:n}),"string"==typeof n.ttl&&(n.ttl=ms(n.ttl)),_config[e]=_config[e]||{},-1==_keys.indexOf(e)&&(_keys.push(e),this.length=_keys.length),n.ttl&&!isNaN(n.ttl)?_config[e].ttl=Date.now()+n.ttl:_config[e].ttl&&delete _config[e].ttl,typeof t){case"object":t instanceof Date?(t=t.getTime(),_config[e].t="d"):t instanceof RegExp?(t=t.toString(),_config[e].t="r"):(t=JSON.stringify(t),_config[e].t="o");break;case"function":_config[e].t="f";break;case"number":_config[e].t="n";break;case"boolean":t=t?1:0,_config[e].t="b";break;case"string":default:_config[e].t="s"}ls.setItem(e,t),_saveConfig()},Locally.prototype.get=function(e){return Array.isArray(e)?utils.map(e,function(e){return _get(e)}.bind(this)):_get(e)},Locally.prototype.keys=function(e){return e&&"*"!=e?(e instanceof RegExp||(e=new RegExp(".*"+e+".*")),utils.filter(_keys,function(t){return e.test(t)})):_keys.slice(0)},Locally.prototype.remove=function(e){if("undefined"==typeof e)throw new Error("'remove' requires a key");Array.isArray(e)?utils.each(e,_remove):_remove(e)},Locally.prototype.scan=function(e,t){return utils.each(this.keys(e),t)},Locally.prototype.ttl=function(e,t){return _config[e]?_config[e].ttl?t?ms(_config[e].ttl-Date.now()):_config[e].ttl-Date.now():-1:-2},Locally.prototype.persist=function(e){return _config[e]?delete _config[e].ttl&&_saveConfig():!1},Locally.prototype.expire=function(e,t){return _config[e]?!!(_config[e].ttl=Date.now()+t)&&_saveConfig():!1},Locally.prototype.clear=function(){return ls.clear(),this.length=0,_config={},_keys=[],_saveConfig()},Locally.prototype.key=function(e){return _keys[e]},"object"==typeof exports&&(module.exports.Store=Locally),"function"==typeof define&&define.amd&&define(function(){return{Store:Locally}}),"object"==typeof window&&(window.Locally={Store:Locally})}();
+    _saveConfig = _saveConfig.bind(this);
+    _remove = _remove.bind(this);
+    _get = _get.bind(this);
 
-},{"ms":1}]},{},[2])(2)
-});
+    _saveConfig();
+  };
+
+  Locally.prototype.set = function (key, value, options) {
+    if (!key || !value)
+      return new Error('no key or value given');
+
+    options = options || {};
+
+    if (typeof options !== 'object') {
+      options = { ttl: options };
+    }
+
+    if (typeof options.ttl === 'string') {
+      options.ttl = ms(options.ttl);
+    }
+
+    // Set TTL
+    _config[key] = _config[key] || {};
+
+    // Add to keys array
+    if (_keys.indexOf(key) == -1) {
+      _keys.push(key);
+      this.length = _keys.length;
+    }
+
+    // Set TTL
+    if (options.ttl && !isNaN(options.ttl)) {
+      _config[key].ttl = Date.now() + options.ttl;
+    } else if (_config[key].ttl) {
+      delete _config[key].ttl;
+    }
+
+    // LocalStorage saves and returns values as strings.
+    // Type of values will be saved so that values will be
+    // parsed to their original type.
+    switch (typeof value) {
+      case 'object':
+        // Keep Date objects as timestamps
+        if (value instanceof Date) {
+          value = value.getTime();
+          _config[key].t = 'd';
+        }
+        // Keep RegExp objects as strings
+        else if (value instanceof RegExp) {
+          value = value.toString();
+          _config[key].t = 'r';
+        }
+        // Otherwise keep them as JSON
+        else {
+          value = JSON.stringify(value);
+          _config[key].t = 'o';
+        }
+        break;
+
+      case 'function':
+        _config[key].t = 'f';
+        break;
+
+      case 'number':
+        _config[key].t = 'n';
+        break;
+
+      case 'boolean':
+        value = value ? 1 : 0;
+        _config[key].t = 'b';
+        break;
+
+      case 'string':
+      default:
+        _config[key].t = 's';
+    }
+
+    ls.setItem(key, value);
+    _saveConfig();
+  }
+
+  Locally.prototype.get = function (key) {
+    return Array.isArray(key) ? utils.map(key, function (item) { return _get(item); }.bind(this)) : _get(key);
+  }
+
+  Locally.prototype.keys = function (pattern) {
+    // Return all keys
+    if (!pattern || pattern == '*') return _keys.slice(0);
+
+    // RegExp pattern to be queried
+    if (!(pattern instanceof RegExp)) {
+      pattern = new RegExp('.*' + pattern + '.*');
+    }
+
+    return utils.filter(_keys, function (key) {
+      return pattern.test(key);
+    });
+  }
+
+  Locally.prototype.remove = function (key) {
+    if (typeof key === 'undefined')
+      throw new Error('\'remove\' requires a key');
+
+    if (Array.isArray(key)) {
+      utils.each(key, _remove);
+    } else {
+      _remove(key);
+    }
+  }
+
+  Locally.prototype.scan = function (key, fn) {
+    return utils.each(this.keys(key), fn);
+  }
+
+  Locally.prototype.ttl = function (key, returnString) {
+    return _config[key] ? _config[key].ttl ? (!returnString ? _config[key].ttl - Date.now() : ms(_config[key].ttl - Date.now())) : -1 : -2;
+  }
+
+  Locally.prototype.persist = function (key) {
+    return _config[key] ? delete _config[key].ttl && _saveConfig() : false;
+  }
+
+  Locally.prototype.expire = function (key, ttl) {
+    return _config[key] ? !!(_config[key].ttl = Date.now() + ttl) && _saveConfig() : false;
+  }
+
+  Locally.prototype.clear = function () {
+    ls.clear();
+    this.length = 0;
+
+    _config = {};
+    _keys = [];
+    return _saveConfig();
+  }
+
+  Locally.prototype.key = function (index) {
+    return _keys[index];
+  }
+
+  // Removes a value from localStorage
+  function _remove(key) {
+    ls.removeItem(key);
+    _keys.splice(_keys.indexOf(key), 1);
+    this.length = _keys.length;
+  }
+
+  // Saves config to localStorage
+  function _saveConfig() {
+    ls.setItem('locally-config', JSON.stringify(_config));
+    return true;
+  }
+
+  function _get(key) {
+    // Return null if no key is given
+    if (typeof key === 'undefined' || !_config[key]) return null;
+
+    // Check for TTL
+    // If TTL is exceeded delete data
+    // and return null
+    if (_config[key].ttl < Date.now()) {
+      delete _config[key];
+
+      _saveConfig();
+      _remove(key);
+
+      return null;
+    }
+
+    var value = ls.getItem(key), temp;
+
+    // Return value in correct type
+    switch (_config[key].t) {
+      case 'o':
+        return JSON.parse(value);
+        break;
+
+      case 'd':
+        return new Date(parseInt(value, 10));
+        break;
+
+      case 'r':
+        return new RegExp(value.substring(1, value.length - 1));
+        break;
+
+      case 'f':
+        eval('temp = ' + value);
+        return temp;
+        break;
+
+      case 'n':
+        return Number(value);
+        break;
+
+      case 's':
+        return String(value);
+        break;
+
+      case 'b':
+        return value == '1';
+        break;
+    }
+    return value;
+  }
+
+  // CommonJS
+  if (typeof exports === 'object') {
+    module.exports.Store = Locally;
+  }
+   // AMD. Register as an anonymous module.
+  if (typeof define === 'function' && define.amd) {
+    define(function() {
+      return {
+        Store: Locally
+      };
+    });
+  }
+  // Browser global.
+  if (typeof window === 'object') {
+    window.Locally = {
+      Store: Locally
+    };
+  }
+})();
