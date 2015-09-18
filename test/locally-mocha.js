@@ -176,6 +176,13 @@ function runTests () {
       }, 1010);
     });
 
+    it('should overwrite timeout if new value is set', function () {
+      store.set('overwrite', 'somevalue', 1000);
+      store.set('overwrite', 'some other value');
+
+      assert.equal(store.ttl('overwrite'), -1);
+    });
+
     it('should cache a value using ms(\'2s\')', function (done) {
       this.timeout(3000);
 
@@ -372,6 +379,16 @@ function runTests () {
         assert.equal(store.ttl('notexist'), -2);
         done();
       }, 1001);
+    });
+
+    it('should return string if second parameter is true', function () {
+      store.set('somekey', 'somevalue', '2s');
+
+      setTimeout(function () {
+        assert.isBelow(store.ttl('somekey'), 2000);
+      }, 5);
+
+      assert.equal(store.ttl('somekey', true), '2s');
     });
 
     it('should return -2 if key does not exist', function () {

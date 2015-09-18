@@ -115,6 +115,8 @@
     // Set TTL
     if (options.ttl && !isNaN(options.ttl)) {
       _config[key].ttl = Date.now() + options.ttl;
+    } else if (_config[key].ttl) {
+      delete _config[key].ttl;
     }
 
     // LocalStorage saves and returns values as strings.
@@ -194,8 +196,8 @@
     return utils.each(this.keys(key), fn);
   }
 
-  Locally.prototype.ttl = function (key) {
-    return _config[key] ? _config[key].ttl ? _config[key].ttl - Date.now() : -1 : -2;
+  Locally.prototype.ttl = function (key, returnString) {
+    return _config[key] ? _config[key].ttl ? (!returnString ? _config[key].ttl - Date.now() : ms(_config[key].ttl - Date.now())) : -1 : -2;
   }
 
   Locally.prototype.persist = function (key) {
