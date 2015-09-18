@@ -9,7 +9,9 @@
   ],
   "homepage": "https://github.com/ozantunca/locally",
   "keywords": [
-    "localStorage"
+    "localStorage",
+    "manager",
+    "compression"
   ],
   "license": "MIT",
   "ignore": [
