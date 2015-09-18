@@ -1,7 +1,7 @@
 Locally
 ============
 [![npm version](https://badge.fury.io/js/locallyjs.svg)](https://www.npmjs.org/package/locallyjs)
-[![Travis](https://img.shields.io/travis/ozantunca/locally.svg?style=flat)](https://travis-ci.org/ozantunca/locallyjs)
+[![Travis](https://img.shields.io/travis/ozantunca/locally.svg?style=flat)](https://travis-ci.org/ozantunca/locally)
 
 Locally is a localStorage manager that supports expirable values with TTL and compresses them using LZW.
 W3C specification suggest 5MB of quota for every origin. Even though it's not a must, browsers tend to stay around that number thus giving our site that is exhaustible in the long run. Locally's TTL support will take care of that. 
