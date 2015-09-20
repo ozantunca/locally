@@ -51,7 +51,7 @@
         , l = arr.length;
       while (l--) {
         if (iteratee(arr[l], l))
-          newArr.push(iteratee);
+          newArr.push(arr[l]);
       }
       return newArr;
     }
@@ -179,8 +179,6 @@
   }
 
   Locally.prototype.scan = function (key, fn) {
-    // console.log(key)
-    // console.log(this.keys(key))
     return utils.each(this.keys(key), fn);
   }
 

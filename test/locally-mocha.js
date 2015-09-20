@@ -248,9 +248,7 @@ function runTests () {
 
   describe('compression', function () {
     it('should compress given value', function () {
-      store.set('compress1', 'tobecompressed', {
-        compress: true
-      });
+      store.set('compress1', 'tobecompressed', { compress: true });
 
       assert.isBelow(localStorage.getItem('compress1').length, 'tobecompressed'.length)
       assert.equal(store.get('compress1').length, 'tobecompressed'.length);
@@ -370,15 +368,27 @@ function runTests () {
       assert.typeOf(keys, 'array');
       assert.lengthOf(keys, 5);
 
+      keys.forEach(function (k) {
+        assert.equal(k.indexOf('key'), 0);
+      });
+
       var keys = store.keys(/.*key.*/);
       assert.typeOf(keys, 'array');
       assert.lengthOf(keys, 7);
+
+      keys.forEach(function (k) {
+        assert.isAbove(k.indexOf('key'), -1);
+      });
 
       // when given string, locally should add .*
       // on both ends and query like that
       var keys = store.keys('key');
       assert.typeOf(keys, 'array');
       assert.lengthOf(keys, 7);
+
+      keys.forEach(function (k) {
+        assert.isAbove(k.indexOf('key'), -1);
+      });
     });
   });
 
