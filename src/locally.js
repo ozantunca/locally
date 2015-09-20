@@ -2,7 +2,8 @@
 
 (function () {
   var ls = typeof window !== 'undefined' ? window.localStorage : null
-    , ms = require('ms');
+    , ms = require('ms')
+    , lzstring = require('lz-string');
 
   // Provide an in-memory fallback for
   // older browsers.
@@ -56,9 +57,13 @@
     }
   }
 
-  var _keys, _config;
+  var _keys, _config, _compressAll;
 
   var Locally = function (options) {
+    // custom options
+    options = options || {};
+    _compressAll = options.compress;
+
     // load current localStorage state
     _config = ls.getItem('locally-config');
 
@@ -77,6 +82,11 @@
       while (l--) {
         _keys[l] = ls.key(l);
         _config[_keys[l]] = _config[_keys[l]] || {};
+
+        if (_compressAll) {
+          _config[_keys[l]].c = true;
+          ls.setItem(_keys[l], lzstring.compressToUTF16( ls.getItem(_keys[l]) ));
+        }
       }
 
       // Exclude locally-config from _keys array
@@ -124,41 +134,15 @@
     // LocalStorage saves and returns values as strings.
     // Type of values will be saved so that values will be
     // parsed to their original type.
-    switch (typeof value) {
-      case 'object':
-        // Keep Date objects as timestamps
-        if (value instanceof Date) {
-          value = value.getTime();
-          _config[key].t = 'd';
-        }
-        // Keep RegExp objects as strings
-        else if (value instanceof RegExp) {
-          value = value.toString();
-          _config[key].t = 'r';
-        }
-        // Otherwise keep them as JSON
-        else {
-          value = JSON.stringify(value);
-          _config[key].t = 'o';
-        }
-        break;
+    var res = _getType(value);
 
-      case 'function':
-        _config[key].t = 'f';
-        break;
+    value = res.value;
+    _config[key].t = res.type;
 
-      case 'number':
-        _config[key].t = 'n';
-        break;
-
-      case 'boolean':
-        value = value ? 1 : 0;
-        _config[key].t = 'b';
-        break;
-
-      case 'string':
-      default:
-        _config[key].t = 's';
+    // compression
+    if (options.compress || _compressAll) {
+      _config[key].c = 1;
+      value = lzstring.compressToUTF16(value.toString());
     }
 
     ls.setItem(key, value);
@@ -195,6 +179,8 @@
   }
 
   Locally.prototype.scan = function (key, fn) {
+    // console.log(key)
+    // console.log(this.keys(key))
     return utils.each(this.keys(key), fn);
   }
 
@@ -252,7 +238,7 @@
       return null;
     }
 
-    var value = ls.getItem(key), temp;
+    var temp, value = _config[key].c ? lzstring.decompressFromUTF16( ls.getItem(key) ) : ls.getItem(key);
 
     // Return value in correct type
     switch (_config[key].t) {
@@ -277,15 +263,62 @@
         return Number(value);
         break;
 
-      case 's':
-        return String(value);
-        break;
-
       case 'b':
         return value == '1';
         break;
+
+      case 's':
+      default:
+        return String(value);
+        break;
     }
     return value;
+  }
+
+  function _getType(value) {
+    var type;
+
+    switch (typeof value) {
+      case 'object':
+        // Keep Date objects as timestamps
+        if (value instanceof Date) {
+          value = value.getTime();
+          type = 'd';
+        }
+        // Keep RegExp objects as strings
+        else if (value instanceof RegExp) {
+          value = value.toString();
+          type = 'r';
+        }
+        // Otherwise keep them as JSON
+        else {
+          value = JSON.stringify(value);
+          type = 'o';
+        }
+        break;
+
+      case 'function':
+        type = 'f';
+        break;
+
+      case 'number':
+        type = 'n';
+        break;
+
+      case 'boolean':
+        value = value ? 1 : 0;
+        type = 'b';
+        break;
+
+      case 'string':
+      default:
+        type = 's';
+    }
+
+    return {
+      value: value,
+      type: type
+    };
   }
 
   // CommonJS

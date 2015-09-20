@@ -246,6 +246,36 @@ function runTests () {
     });
   });
 
+  describe('compression', function () {
+    it('should compress given value', function () {
+      store.set('compress1', 'tobecompressed', {
+        compress: true
+      });
+
+      assert.isBelow(localStorage.getItem('compress1').length, 'tobecompressed'.length)
+      assert.equal(store.get('compress1').length, 'tobecompressed'.length);
+    });
+
+    it('should compress all', function () {
+      var store3 = new Store({ compress: true });
+
+      store3.set('shouldbecompressed', 'tobecompressed');
+      store3.set('shouldbecompressed2', 'tobecompressed');
+
+      assert.isBelow(localStorage.getItem('shouldbecompressed').length, 'tobecompressed'.length)
+      assert.equal(store.get('shouldbecompressed').length, 'tobecompressed'.length);
+
+      assert.isBelow(localStorage.getItem('shouldbecompressed').length, 'tobecompressed'.length)
+      assert.equal(store.get('shouldbecompressed2').length, 'tobecompressed'.length);
+    });
+
+    it('get() should return decompressed value', function () {
+      store.set('decompress1', 'tobedecompressed', { compress: true });
+
+      assert.equal(store.get('decompress1'), 'tobedecompressed');
+    });
+  });
+
   describe('type checks', function () {
     it('should be able to add an object', function () {
       var len = localStorage.length;
@@ -489,7 +519,9 @@ function runTests () {
       // tests
       assert.strictEqual(store2.get('anykey'), 'anyvalue');
       assert.strictEqual(store2.get('outsideItem1'), 'testItem1');
+      assert.strictEqual(store2.get('outsideItem2'), '123');
       assert.ok(store2.keys().indexOf('outsideItem2') > -1);
+      assert.equal(store.length + 2, store2.length)
     });
   });
 

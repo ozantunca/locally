@@ -13,6 +13,7 @@
     "uglifyjs": "^2.4.10"
   },
   "dependencies": {
+    "lz-string": "^1.4.4",
     "ms": "^0.7.1"
   },
   "repository": {
