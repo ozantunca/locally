@@ -70,40 +70,41 @@
     // start anew if no config
     if (!_config) {
       _config = {};
-      _keys = [];
-      this.length = 0;
+
+      // reads localstorage and updates config
+      _rebuildConfig();
     }
     else {
-      var l = ls.length;
-      _config = JSON.parse(_config);
-      _keys = new Array(l);
+      var deconfig = lzstring.decompressFromUTF16(_config);
 
-      // Cache localStorage keys for faster access
-      while (l--) {
-        _keys[l] = ls.key(l);
-        _config[_keys[l]] = _config[_keys[l]] || {};
-
-        if (_compressAll) {
-          _config[_keys[l]].c = true;
-          ls.setItem(_keys[l], lzstring.compressToUTF16( ls.getItem(_keys[l]) ));
-        }
+      try {
+        _config = JSON.parse(deconfig || _config);
+      } catch (e) {
+        if (!!deconfig) {
+          try {
+            _config = JSON.parse(_config);
+          } catch (e) {
+            throw new Error('Locally: config is corrupted');
+          }
+        } else throw new Error('Locally: config is corrupted');
       }
 
-      // Exclude locally-config from _keys array
-      _keys.splice(_keys.indexOf('locally-config'), 1);
-      this.length = _keys.length;
+      // reads localstorage and updates config
+      _rebuildConfig();
     }
 
-    _saveConfig = _saveConfig.bind(this);
-    _remove = _remove.bind(this);
-    _get = _get.bind(this);
-
     _saveConfig();
+
+    Object.defineProperty(this, 'length', {
+      get: function () {
+        return _keys.length;
+      }
+    });
   };
 
   Locally.prototype.set = function (key, value, options) {
     if (!key || !value)
-      return new Error('no key or value given');
+      throw new Error('Locally: no key or value given');
 
     options = options || {};
 
@@ -121,7 +122,6 @@
     // Add to keys array
     if (_keys.indexOf(key) == -1) {
       _keys.push(key);
-      this.length = _keys.length;
     }
 
     // Set TTL
@@ -169,15 +169,16 @@
 
   Locally.prototype.remove = function (key) {
     if (typeof key === 'undefined')
-      throw new Error('\'remove\' requires a key');
+      throw new Error('Locally: \'remove\' requires a key');
 
     if (Array.isArray(key)) {
-      utils.each(key, _remove);
+      utils.each(key, _remove.bind(this));
     } else {
       _remove(key);
     }
   }
 
+  // callback gets 'value' and 'key' as parameters
   Locally.prototype.scan = function (key, fn) {
     return utils.each(this.keys(key), fn);
   }
@@ -196,7 +197,6 @@
 
   Locally.prototype.clear = function () {
     ls.clear();
-    this.length = 0;
 
     _config = {};
     _keys = [];
@@ -211,12 +211,11 @@
   function _remove(key) {
     ls.removeItem(key);
     _keys.splice(_keys.indexOf(key), 1);
-    this.length = _keys.length;
   }
 
   // Saves config to localStorage
   function _saveConfig() {
-    ls.setItem('locally-config', JSON.stringify(_config));
+    ls.setItem('locally-config', JSON.stringify(_config)) ;
     return true;
   }
 
@@ -241,7 +240,11 @@
     // Return value in correct type
     switch (_config[key].t) {
       case 'o':
-        return JSON.parse(value);
+        try {
+          value = JSON.parse(value);
+        } catch (e) {}
+
+        return value;
         break;
 
       case 'd':
@@ -270,7 +273,6 @@
         return String(value);
         break;
     }
-    return value;
   }
 
   function _getType(value) {
@@ -317,6 +319,34 @@
       value: value,
       type: type
     };
+  }
+
+  function _rebuildConfig() {
+    var l = ls.length;
+    _keys = new Array(l);
+
+    // Cache localStorage keys for faster access
+    while (l--) {
+      _keys[l] = ls.key(l);
+      _config[_keys[l]] = _config[_keys[l]] || {};
+
+      // _compressAll is given and value is not
+      // compressed then compress the value
+      if (_compressAll && !_config[_keys[l]].c) {
+        _config[_keys[l]].c = true;
+        ls.setItem(_keys[l], lzstring.compressToUTF16( ls.getItem(_keys[l]) ));
+      }
+      // if the value is compressed and
+      // compressAll is not given then decompress
+      // current value.
+      else if (!_compressAll && _config[_keys[l]].c) {
+        delete _config[_keys[l]].c;
+        ls.setItem(_keys[l], lzstring.decompressFromUTF16( ls.getItem(_keys[l]) ));
+      }
+    }
+
+    // Exclude locally-config from _keys array
+    _keys.splice(_keys.indexOf('locally-config'), 1);
   }
 
   // CommonJS
