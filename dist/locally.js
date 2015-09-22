@@ -2,7 +2,8 @@
 
 (function () {
   var ls = typeof window !== 'undefined' ? window.localStorage : null
-    , ms = require('ms');
+    , ms = require('ms')
+    , lzstring = require('lz-string');
 
   // Provide an in-memory fallback for
   // older browsers.
@@ -50,50 +51,60 @@
         , l = arr.length;
       while (l--) {
         if (iteratee(arr[l], l))
-          newArr.push(iteratee);
+          newArr.push(arr[l]);
       }
       return newArr;
     }
   }
 
-  var _keys, _config;
+  var _keys, _config, _compressAll, _timeouts = {};
 
   var Locally = function (options) {
+    // custom options
+    options = options || {};
+    _compressAll = options.compress;
+
     // load current localStorage state
     _config = ls.getItem('locally-config');
 
     // start anew if no config
     if (!_config) {
       _config = {};
-      _keys = [];
-      this.length = 0;
+
+      // reads localstorage and updates config
+      _rebuildConfig();
     }
     else {
-      var l = ls.length;
-      _config = JSON.parse(_config);
-      _keys = new Array(l);
+      var deconfig = lzstring.decompressFromUTF16(_config);
 
-      // Cache localStorage keys for faster access
-      while (l--) {
-        _keys[l] = ls.key(l);
-        _config[_keys[l]] = _config[_keys[l]] || {};
+      try {
+        _config = JSON.parse(deconfig || _config);
+      } catch (e) {
+        if (!!deconfig) {
+          try {
+            _config = JSON.parse(_config);
+          } catch (e) {
+            throw new Error('Locally: config is corrupted');
+          }
+        } else throw new Error('Locally: config is corrupted');
       }
 
-      // Exclude locally-config from _keys array
-      _keys.splice(_keys.indexOf('locally-config'), 1);
-      this.length = _keys.length;
+      // reads localstorage and updates config
+      _rebuildConfig();
     }
 
-    _saveConfig = _saveConfig.bind(this);
-    _remove = _remove.bind(this);
-    _get = _get.bind(this);
-
     _saveConfig();
+
+    Object.defineProperty(this, 'length', {
+      get: function () {
+        return _keys.length;
+      }
+    });
   };
 
   Locally.prototype.set = function (key, value, options) {
     if (!key || !value)
-      return new Error('no key or value given');
+      throw new Error('Locally: no key or value given');
 
     options = options || {};
 
@@ -111,54 +122,28 @@
     // Add to keys array
     if (_keys.indexOf(key) == -1) {
       _keys.push(key);
-      this.length = _keys.length;
     }
 
     // Set TTL
     if (options.ttl && !isNaN(options.ttl)) {
-      _config[key].ttl = Date.now() + options.ttl;
+      _clearTimeout(key);
+      _setTimeout(key, options.ttl);
     } else if (_config[key].ttl) {
-      delete _config[key].ttl;
+      _clearTimeout(key);
     }
 
     // LocalStorage saves and returns values as strings.
     // Type of values will be saved so that values will be
     // parsed to their original type.
-    switch (typeof value) {
-      case 'object':
-        // Keep Date objects as timestamps
-        if (value instanceof Date) {
-          value = value.getTime();
-          _config[key].t = 'd';
-        }
-        // Keep RegExp objects as strings
-        else if (value instanceof RegExp) {
-          value = value.toString();
-          _config[key].t = 'r';
-        }
-        // Otherwise keep them as JSON
-        else {
-          value = JSON.stringify(value);
-          _config[key].t = 'o';
-        }
-        break;
+    var res = _getType(value);
 
-      case 'function':
-        _config[key].t = 'f';
-        break;
+    value = res.value;
+    _config[key].t = res.type;
 
-      case 'number':
-        _config[key].t = 'n';
-        break;
-
-      case 'boolean':
-        value = value ? 1 : 0;
-        _config[key].t = 'b';
-        break;
-
-      case 'string':
-      default:
-        _config[key].t = 's';
+    // compression
+    if (options.compress || _compressAll) {
+      _config[key].c = 1;
+      value = lzstring.compressToUTF16(value.toString());
     }
 
     ls.setItem(key, value);
@@ -185,7 +170,7 @@
 
   Locally.prototype.remove = function (key) {
     if (typeof key === 'undefined')
-      throw new Error('\'remove\' requires a key');
+      throw new Error('Locally: \'remove\' requires a key');
 
     if (Array.isArray(key)) {
       utils.each(key, _remove);
@@ -194,6 +179,7 @@
     }
   }
 
+  // callback gets 'value' and 'key' as parameters
   Locally.prototype.scan = function (key, fn) {
     return utils.each(this.keys(key), fn);
   }
@@ -203,7 +189,7 @@
   }
 
   Locally.prototype.persist = function (key) {
-    return _config[key] ? delete _config[key].ttl && _saveConfig() : false;
+    return _config[key] ? delete _config[key].ttl && _saveConfig() && _clearTimeout(key) : false;
   }
 
   Locally.prototype.expire = function (key, ttl) {
@@ -212,7 +198,6 @@
 
   Locally.prototype.clear = function () {
     ls.clear();
-    this.length = 0;
 
     _config = {};
     _keys = [];
@@ -225,14 +210,17 @@
 
   // Removes a value from localStorage
   function _remove(key) {
-    ls.removeItem(key);
-    _keys.splice(_keys.indexOf(key), 1);
-    this.length = _keys.length;
+    var i = _keys.indexOf(key)
+    if (i > -1) {
+      ls.removeItem(key);
+      _keys.splice(_keys.indexOf(key), 1);
+      delete _config[key];
+    }
   }
 
   // Saves config to localStorage
   function _saveConfig() {
-    ls.setItem('locally-config', JSON.stringify(_config));
+    ls.setItem('locally-config', lzstring.compressToUTF16( JSON.stringify(_config)) );
     return true;
   }
 
@@ -243,7 +231,7 @@
     // Check for TTL
     // If TTL is exceeded delete data
     // and return null
-    if (_config[key].ttl < Date.now()) {
+    if (_config[key].ttl && _config[key].ttl < Date.now()) {
       delete _config[key];
 
       _saveConfig();
@@ -252,12 +240,16 @@
       return null;
     }
 
-    var value = ls.getItem(key), temp;
+    var temp, value = _config[key].c ? lzstring.decompressFromUTF16( ls.getItem(key) ) : ls.getItem(key);
 
     // Return value in correct type
     switch (_config[key].t) {
       case 'o':
-        return JSON.parse(value);
+        try {
+          value = JSON.parse(value);
+        } catch (e) {}
+
+        return value;
         break;
 
       case 'd':
@@ -277,15 +269,110 @@
         return Number(value);
         break;
 
-      case 's':
-        return String(value);
-        break;
-
       case 'b':
         return value == '1';
         break;
+
+      case 's':
+      default:
+        return String(value);
+        break;
     }
-    return value;
+  }
+
+  function _getType(value) {
+    var type;
+
+    switch (typeof value) {
+      case 'object':
+        // Keep Date objects as timestamps
+        if (value instanceof Date) {
+          value = value.getTime();
+          type = 'd';
+        }
+        // Keep RegExp objects as strings
+        else if (value instanceof RegExp) {
+          value = value.toString();
+          type = 'r';
+        }
+        // Otherwise keep them as JSON
+        else {
+          value = JSON.stringify(value);
+          type = 'o';
+        }
+        break;
+
+      case 'function':
+        type = 'f';
+        break;
+
+      case 'number':
+        type = 'n';
+        break;
+
+      case 'boolean':
+        value = value ? 1 : 0;
+        type = 'b';
+        break;
+
+      case 'string':
+      default:
+        type = 's';
+    }
+
+    return {
+      value: value,
+      type: type
+    };
+  }
+
+  function _rebuildConfig() {
+    var l = ls.length;
+    _keys = new Array(l);
+
+    // Cache localStorage keys for faster access
+    while (l--) {
+      _keys[l] = ls.key(l);
+      _config[_keys[l]] = _config[_keys[l]] || {};
+
+      // _compressAll is given and value is not
+      // compressed then compress the value
+      if (_compressAll && !_config[_keys[l]].c) {
+        _config[_keys[l]].c = true;
+        ls.setItem(_keys[l], lzstring.compressToUTF16( ls.getItem(_keys[l]) ));
+      }
+      // if the value is compressed and
+      // compressAll is not given then decompress
+      // current value.
+      else if (!_compressAll && _config[_keys[l]].c) {
+        delete _config[_keys[l]].c;
+        ls.setItem(_keys[l], lzstring.decompressFromUTF16( ls.getItem(_keys[l]) ));
+      }
+
+      if (_config[_keys[l]].ttl) {
+        _setTimeout(_keys[l], _config[_keys[l]].ttl - Date.now());
+      }
+    }
+
+    // Exclude locally-config from _keys array
+    _keys.splice(_keys.indexOf('locally-config'), 1);
+  }
+
+  function _setTimeout(key, ttl) {
+    _config[key].ttl = Date.now() + ttl;
+    _timeouts[key] = setTimeout(function () {
+      _remove(key);
+    }, ttl);
+  }
+
+  function _clearTimeout(key) {
+    if (_keys.indexOf(key) > -1) {
+      clearTimeout(_timeouts[key]);
+      delete _timeouts[key];
+      delete _config[key].ttl;
+      return true;
+    }
+    else return false;
   }
 
   // CommonJS

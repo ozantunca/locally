@@ -57,7 +57,7 @@
     }
   }
 
-  var _keys, _config, _compressAll;
+  var _keys, _config, _compressAll, _timeouts = {};
 
   var Locally = function (options) {
     // custom options
@@ -126,9 +126,10 @@
 
     // Set TTL
     if (options.ttl && !isNaN(options.ttl)) {
-      _config[key].ttl = Date.now() + options.ttl;
+      _clearTimeout(key);
+      _setTimeout(key, options.ttl);
     } else if (_config[key].ttl) {
-      delete _config[key].ttl;
+      _clearTimeout(key);
     }
 
     // LocalStorage saves and returns values as strings.
@@ -172,7 +173,7 @@
       throw new Error('Locally: \'remove\' requires a key');
 
     if (Array.isArray(key)) {
-      utils.each(key, _remove.bind(this));
+      utils.each(key, _remove);
     } else {
       _remove(key);
     }
@@ -188,7 +189,7 @@
   }
 
   Locally.prototype.persist = function (key) {
-    return _config[key] ? delete _config[key].ttl && _saveConfig() : false;
+    return _config[key] ? delete _config[key].ttl && _saveConfig() && _clearTimeout(key) : false;
   }
 
   Locally.prototype.expire = function (key, ttl) {
@@ -209,13 +210,17 @@
 
   // Removes a value from localStorage
   function _remove(key) {
-    ls.removeItem(key);
-    _keys.splice(_keys.indexOf(key), 1);
+    var i = _keys.indexOf(key)
+    if (i > -1) {
+      ls.removeItem(key);
+      _keys.splice(_keys.indexOf(key), 1);
+      delete _config[key];
+    }
   }
 
   // Saves config to localStorage
   function _saveConfig() {
-    ls.setItem('locally-config', JSON.stringify(_config)) ;
+    ls.setItem('locally-config', lzstring.compressToUTF16( JSON.stringify(_config)) );
     return true;
   }
 
@@ -226,7 +231,7 @@
     // Check for TTL
     // If TTL is exceeded delete data
     // and return null
-    if (_config[key].ttl < Date.now()) {
+    if (_config[key].ttl && _config[key].ttl < Date.now()) {
       delete _config[key];
 
       _saveConfig();
@@ -343,10 +348,31 @@
         delete _config[_keys[l]].c;
         ls.setItem(_keys[l], lzstring.decompressFromUTF16( ls.getItem(_keys[l]) ));
       }
+
+      if (_config[_keys[l]].ttl) {
+        _setTimeout(_keys[l], _config[_keys[l]].ttl - Date.now());
+      }
     }
 
     // Exclude locally-config from _keys array
     _keys.splice(_keys.indexOf('locally-config'), 1);
+  }
+
+  function _setTimeout(key, ttl) {
+    _config[key].ttl = Date.now() + ttl;
+    _timeouts[key] = setTimeout(function () {
+      _remove(key);
+    }, ttl);
+  }
+
+  function _clearTimeout(key) {
+    if (_keys.indexOf(key) > -1) {
+      clearTimeout(_timeouts[key]);
+      delete _timeouts[key];
+      delete _config[key].ttl;
+      return true;
+    }
+    else return false;
   }
 
   // CommonJS

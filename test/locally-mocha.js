@@ -12,7 +12,7 @@ if (typeof exports === 'object') {
   };
 } else runTests();
 
-function expectedKeys (len) {
+function expectedLen (len) {
   assert.lengthOf(localStorage, len);
   assert.lengthOf(store, len - 1);
 }
@@ -139,7 +139,7 @@ function runTests () {
       store.set('key', 'value');
 
       // tests
-      expectedKeys(len + 1);
+      expectedLen(len + 1);
       assert.strictEqual(store.get('key'), 'value');
     });
 
@@ -148,7 +148,7 @@ function runTests () {
       store.set('key', 'different value');
 
       // tests
-      expectedKeys(len);
+      expectedLen(len);
       assert.strictEqual(store.get('key'), 'different value');
     });
 
@@ -157,36 +157,38 @@ function runTests () {
       store.set('key2', 'some value');
 
       // tests
-      expectedKeys(len + 1);
+      expectedLen(len + 1);
       assert.strictEqual(store.get('key2'), 'some value');
     });
 
     it('should cache a value with options object', function (done) {
       var len = localStorage.length;
+
       store.set('key4', 'value', { ttl: 1000 });
 
       // tests
-      expectedKeys(len + 1);
+      expectedLen(len + 1);
       assert.isNotNull(store.get('key4'));
 
       setTimeout(function () {
+        expectedLen(len);
         assert.isNull(store.get('key4'));
-        assert.lengthOf(localStorage, len);
         done();
       }, 1010);
     });
 
     it('should cache a value with options object when ttl is string', function (done) {
       var len = localStorage.length;
+
       store.set('key4', 'value', { ttl: '1s' });
 
       // tests
-      expectedKeys(len + 1);
+      expectedLen(len + 1);
       assert.isNotNull(store.get('key4'));
 
       setTimeout(function () {
+        expectedLen(len);
         assert.isNull(store.get('key4'));
-        assert.lengthOf(localStorage, len);
         done();
       }, 1010);
     });
@@ -204,13 +206,12 @@ function runTests () {
       var len = localStorage.length;
       store.set('key5', 'value', '2s');
 
-      expectedKeys(len + 1);
+      expectedLen(len + 1);
       assert.isNotNull(store.get('key5'));
 
       setTimeout(function () {
         assert.isNull(store.get('key5'));
-        expectedKeys(len);
-
+        expectedLen(len);
         done();
       }, 2010);
     });
@@ -219,7 +220,7 @@ function runTests () {
       var len = localStorage.length;
       store.set('key5', 'value', '1m');
 
-      expectedKeys(len + 1);
+      expectedLen(len + 1);
       assert.isNotNull(store.get('key5'));
 
       setTimeout(function () {
@@ -235,7 +236,7 @@ function runTests () {
       var len = localStorage.length;
       store.set('key6', 'value', '2 days');
 
-      expectedKeys(len + 1);
+      expectedLen(len + 1);
       assert.isNotNull(store.get('key6'));
 
       setTimeout(function () {
@@ -261,16 +262,28 @@ function runTests () {
       store3.set('shouldbecompressed2', 'tobecompressed');
 
       assert.isBelow(localStorage.getItem('shouldbecompressed').length, 'tobecompressed'.length)
-      assert.equal(store.get('shouldbecompressed').length, 'tobecompressed'.length);
+      assert.equal(store.get('shouldbecompressed'), 'tobecompressed');
 
       assert.isBelow(localStorage.getItem('shouldbecompressed').length, 'tobecompressed'.length)
-      assert.equal(store.get('shouldbecompressed2').length, 'tobecompressed'.length);
+      assert.equal(store.get('shouldbecompressed2'), 'tobecompressed');
+
+      store.scan('*', function (value, key) {
+        assert.notEqual(localStorage.getItem(key), value);
+      });
     });
 
     it('get() should return decompressed value', function () {
       store.set('decompress1', 'tobedecompressed', { compress: true });
 
       assert.equal(store.get('decompress1'), 'tobedecompressed');
+    });
+
+    it('should decompress all', function () {
+      new Store();
+
+      store.scan('*', function (key) {
+        assert.equal(localStorage.getItem(key), store.get(key));
+      });
     });
   });
 
@@ -281,7 +294,7 @@ function runTests () {
       store.set('key3', obj);
 
       // tests
-      expectedKeys(len + 1);
+      expectedLen(len + 1);
       assert.typeOf(store.get('key3'), 'object');
       assert.ok(deepCompare(store.get('key3'), obj));
     });
@@ -292,7 +305,7 @@ function runTests () {
       store.set('fn1', fn);
 
       // tests
-      expectedKeys(len + 1);
+      expectedLen(len + 1);
       assert.typeOf(store.get('fn1'), 'function');
       assert.equal(store.get('fn1')(), 'test function');
     });
@@ -303,7 +316,7 @@ function runTests () {
       store.set('date1', date);
 
       // tests
-      expectedKeys(len + 1);
+      expectedLen(len + 1);
       assert.typeOf(store.get('date1'), 'date');
       assert.ok(store.get('date1') instanceof Date);
       assert.equal(store.get('date1').getTime(), (new Date(2012, 10, 10).getTime()));
@@ -315,7 +328,7 @@ function runTests () {
       store.set('num1', num);
 
       // tests
-      expectedKeys(len + 1);
+      expectedLen(len + 1);
       assert.typeOf(store.get('num1'), 'number');
     });
   });
@@ -338,6 +351,7 @@ function runTests () {
       var len = localStorage.length - 1;
       var keys = store.keys();
 
+      assert.equal(keys.length, store.length);
       assert.typeOf(keys, 'array');
       assert.lengthOf(keys, len);
 
@@ -396,9 +410,10 @@ function runTests () {
     it('should iterate records that matches given key pattern', function () {
       var count = 0;
 
-      store.scan('.*key.*', function (item) {
+      store.scan('.*key.*', function (key) {
         count++;
-        assert.isNotNull(item);
+        assert.isNotNull(key);
+        assert.isNotNull(store.get(key));
       });
 
       assert.equal(count, 7);
@@ -521,6 +536,8 @@ function runTests () {
 
   describe('not breaking current data', function () {
     it('should read current data', function () {
+      var len = store.length;
+
       localStorage.setItem('outsideItem1', 'testItem1');
       localStorage.setItem('outsideItem2', 123);
 
@@ -531,14 +548,67 @@ function runTests () {
       assert.strictEqual(store2.get('outsideItem1'), 'testItem1');
       assert.strictEqual(store2.get('outsideItem2'), '123');
       assert.ok(store2.keys().indexOf('outsideItem2') > -1);
-      assert.equal(store.length + 2, store2.length)
+      assert.equal(len + 2, store2.length);
+    });
+
+    it('should be able to start from scratch', function () {
+      localStorage.removeItem('locally-config');
+
+      var store4 = new Store();
+
+      assert.isAbove(store4.length, 0);
+      assert.equal(store4.length, store.length);
+    });
+
+    it('shouldnt forget timeout when starting from scratch', function (done) {
+      store.set('timeout', 'value', '1s');
+      var store4 = new Store();
+
+      assert.notEqual(store4.ttl('timeout'), -1);
+      assert.notEqual(store4.ttl('timeout'), -2);
+      assert.isAbove(store4.ttl('timeout'), 0);
+
+      setTimeout(function () {
+        assert.isNull(store4.get('timeout'));
+        done();
+      }, 1010);
+    });
+
+    it('should remove timed out values on startup', function (done) {
+      var len = localStorage.length;
+
+      store.set('timeout', 'value', '1s');
+
+      setTimeout(function () {
+        new Store();
+        expectedLen(len);
+        done();
+      }, 1010);
+    });
+
+    it('shouldnt forget type when starting from scratch', function () {
+      store.set('string', 'string');
+      store.set('number', 123);
+      store.set('function', function () {});
+      store.set('object', { key: 'value' });
+      store.set('date', new Date());
+      store.set('regexp', new RegExp('.*'));
+
+      var store4 = new Store();
+
+      assert.typeOf(store4.get('string'), 'string');
+      assert.typeOf(store4.get('number'), 'number');
+      assert.typeOf(store4.get('function'), 'function');
+      assert.typeOf(store4.get('object'), 'object');
+      assert.typeOf(store4.get('date'), 'date');
+      assert.typeOf(store4.get('regexp'), 'regexp');
     });
   });
 
   describe('clear()', function () {
     it('should remove all values', function () {
       store.clear();
-      expectedKeys(1);
+      expectedLen(1);
     });
   });
 }
