@@ -410,10 +410,11 @@ function runTests () {
     it('should iterate records that matches given key pattern', function () {
       var count = 0;
 
-      store.scan('.*key.*', function (key) {
+      store.scan('.*key.*', function (value, key) {
         count++;
+        assert.isNotNull(value);
         assert.isNotNull(key);
-        assert.isNotNull(store.get(key));
+        assert.deepEqual(store.get(key), value);
       });
 
       assert.equal(count, 7);

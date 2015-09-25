@@ -181,7 +181,9 @@
 
   // callback gets 'value' and 'key' as parameters
   Locally.prototype.scan = function (key, fn) {
-    return utils.each(this.keys(key), fn);
+    return utils.each(this.keys(key), function (key) {
+      fn(_get(key), key);
+    });
   }
 
   Locally.prototype.ttl = function (key, returnString) {
