@@ -357,7 +357,9 @@
     }
 
     // Exclude locally-config from _keys array
-    _keys.splice(_keys.indexOf('locally-config'), 1);
+    if (_keys.indexOf('locally-config') > -1) {
+      _keys.splice(_keys.indexOf('locally-config'), 1);
+    }
   }
 
   function _setTimeout(key, ttl) {

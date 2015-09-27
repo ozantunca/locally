@@ -42,6 +42,8 @@ if (argv.dist) {
   Store = require('../src/locally').Store
 }
 
+localStorage.setItem('preexisting', 'value');
+
 describe('locally', function() {
 
   require('./locally-mocha.js')({

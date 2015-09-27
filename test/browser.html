@@ -10,6 +10,8 @@
   <body>
     <div id="mocha"></div>
     <script>
+      localStorage.setItem('preexisting', 'value');
+
       mocha.ui('bdd');
       mocha.reporter('html');
       window.assert = chai.assert;
