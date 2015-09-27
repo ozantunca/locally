@@ -11,9 +11,8 @@ Locally works much like a caching software (e.g. Redis)
 - [Defining timeout for values to ensure some values will expire in time.](#user-content-timeout-support)
 - Type checking store and return ```Number```, ```String```, ```Array```, ```Object```, ```Date```, ```RegExp``` and ```Function``` values in their given forms.
 - A much simpler API than originial localStorage while keeping all it's functions intact.
+- [Compression via LZW algorithm.](#user-content-compression)
 
-##### Upcoming
-- Compression via LZW algorithm.
 
 Locally is installable via 
 
@@ -62,6 +61,14 @@ or if you are already using **browserify**
 var Store = require('locally').Store
   , store = new Store();
 ```
+If **compression** for all values is wanted to be done as default, Locally can be initialized to indicate that.
+```js
+var store = new Store({ compress: true });
+```
+Locally will compress all current and and upcoming values. If you have compressed values but want to decompress them all and continue uncompressed, Locally will perform decompression on all currently compressed values once it's initialized as:
+```js 
+var store = new Store();
+```
 
 #### .set(key, value[, options])
 Assigns a ```value``` to given ```key```. ```key``` is a ```string```. Basic usage is as follows:
@@ -93,6 +100,15 @@ store.set('key', 'value', '5s');
 store.set('key', 'value', '2m');
 store.set('key', 'value', '1 hour');
 ```
+##### Compression
+You can tell **.set()** to compress given value.
+```js
+store.set('key', 'value to be compressed', { compress: true });
+
+store.get('key'); // 'value to be compressed'
+store.get('key').length; // 22
+localStorage.getItem('key').length; // < 22
+```
 #### .get(key)
 Returns the corresponding value of given key.
 ```js
@@ -101,7 +117,7 @@ store.set('key', 'value');
 store.get('key'); // "value"
 store.get('nokey'); // null
 ```
-**.get()* can have it's first parameter as an array. In which case **.get()** will return an array of values assigned to given array of keys.
+**.get()** can have it's first parameter as an array. In which case **.get()** will return an array of values assigned to given array of keys.
 ```js
 store.set('key1', 'value1');
 store.set('key2', 'value2');
@@ -207,8 +223,8 @@ Queries using **keyPattern** and runs **function** for values associated with ke
 store.set('key1', 'value1');
 store.set('key2', 'value2');
 
-store.scan(/key/, function (value) {
-  console.log(value);
+store.scan(/key/, function (value, key) {
+  console.log(key, ' : ', value);
 });
 ```
 
@@ -222,6 +238,9 @@ store.set('key2', 'value2');
 
 store.length; // 2
 ```
+
+#### Compression
+**Locally** by default does not compress values unless it's told to do otherwise. It can be configured to compress all values by giving parameter on initialization, or an extra parameter can be given to **.set()** so that **.set()** will compress that only that value.
 
 ### How Locally Works
 Locally holds an extra object in localStorage called ```locally-config``` to save TTL and type information. It automatically updates config on page load using current values in localStorage to make sure it doesn't miss any value added to localStorage without using Locally.
