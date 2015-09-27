@@ -1,7 +1,7 @@
 {
   "name": "locallyjs",
   "description": "Locally is a localStorage manager that supports expirable values with TTL and saves space by compressing them using LZW algorithm.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "main": "./dist/locally.min",
   "authors": [
     "Ozan Tunca <ozan@ozantunca.org>"
