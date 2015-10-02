@@ -452,11 +452,14 @@ function runTests () {
       }, 1001);
     });
 
-    it('should return string if second parameter is true', function () {
+    it('should return string if second parameter is true', function (done) {
       store.set('somekey', 'somevalue', '2s');
+
+      assert.isAbove(store.ttl('somekey'), 0);
 
       setTimeout(function () {
         assert.isBelow(store.ttl('somekey'), 2000);
+        done();
       }, 5);
 
       assert.equal(store.ttl('somekey', true), '2s');
