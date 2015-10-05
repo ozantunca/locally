@@ -4,7 +4,7 @@ Locally
 [![Travis](https://travis-ci.org/ozantunca/locally.svg?branch=master)](https://travis-ci.org/ozantunca/locally)
 
 Locally is a localStorage manager that supports expirable items with timeout values and saves space by compressing them using LZW algorithm. W3C specification suggest 5MB of quota for every origin. Even though it's not a must, browsers tend to stay around that number thus giving our site an exhaustible storage in the long run. Locally's TTL support will take care of that. 
-Locally works much like a caching software (e.g. Redis) 
+Locally works much like a caching software (e.g. Redis).
 
 ### Features
 - [Defining timeout for values to ensure some values will expire in time.](#user-content-timeout-support)
@@ -33,6 +33,8 @@ setTimeout(function () {
   store.get('example') // null
 }, 1001);
 ```
+
+### [Demo](http://demo.ozantunca.org/locally/)
 
 ### Functions and Properties
 
