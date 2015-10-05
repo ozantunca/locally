@@ -3,8 +3,7 @@ Locally
 [![npm version](https://badge.fury.io/js/locallyjs.svg)](https://www.npmjs.org/package/locallyjs)
 [![Travis](https://travis-ci.org/ozantunca/locally.svg?branch=master)](https://travis-ci.org/ozantunca/locally)
 
-Locally is a localStorage manager that supports expirable values with TTL and compresses them using LZW.
-W3C specification suggest 5MB of quota for every origin. Even though it's not a must, browsers tend to stay around that number thus giving our site that is exhaustible in the long run. Locally's TTL support will take care of that. 
+Locally is a localStorage manager that supports expirable items with timeout values and saves space by compressing them using LZW algorithm. W3C specification suggest 5MB of quota for every origin. Even though it's not a must, browsers tend to stay around that number thus giving our site an exhaustible storage in the long run. Locally's TTL support will take care of that. 
 Locally works much like a caching software (e.g. Redis) 
 
 ### Features
