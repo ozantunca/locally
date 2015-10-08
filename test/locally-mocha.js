@@ -133,7 +133,7 @@ function deepCompare () {
 }
 
 function runTests () {
-  describe('setting values', function() {
+  describe('setting values', function set() {
     it('should add one value to localStorage', function () {
       var len = localStorage.length;
       store.set('key', 'value');
@@ -245,9 +245,28 @@ function runTests () {
         done();
       }, 1000);
     });
+
+    it('should be able to store falsy values', function () {
+      store.set('falsy1', null);
+      store.set('falsy2', undefined);
+      store.set('falsy3', false);
+      store.set('falsy4', '');
+      store.set('falsy5', 0);
+      store.set('falsy6', NaN);
+
+      assert.isNull(store.get('falsy1'), null);
+      assert.isUndefined(store.get('falsy2'), undefined);
+      assert.strictEqual(store.get('falsy3'), false);
+      assert.strictEqual(store.get('falsy4'), '');
+      assert.strictEqual(store.get('falsy5'), 0);
+      assert.ok(isNaN(store.get('falsy6')));
+
+      store.remove('falsy1');
+      store.remove('falsy6');
+    });
   });
 
-  describe('compression', function () {
+  describe('compression', function compression() {
     it('should compress given value', function () {
       store.set('compress1', 'tobecompressed', { compress: true });
 
@@ -281,8 +300,9 @@ function runTests () {
     it('should decompress all', function () {
       new Store();
 
-      store.scan('*', function (key) {
-        assert.equal(localStorage.getItem(key), store.get(key));
+      store.scan('*', function (value, key) {
+        assert.isNotNull(localStorage.getItem(key));
+        assert.equal(value, store.get(key));
       });
     });
   });
@@ -330,6 +350,24 @@ function runTests () {
       // tests
       expectedLen(len + 1);
       assert.typeOf(store.get('num1'), 'number');
+    });
+
+    it('should be able to save a Boolean', function () {
+      var len = localStorage.length;
+      var bool1 = false, bool2 = true;
+      store.set('bool1', bool1);
+      store.set('bool2', bool2);
+
+      // tests
+      expectedLen(len + 2);
+
+      // bool1
+      assert.typeOf(store.get('bool1'), 'boolean');
+      assert.strictEqual(store.get('bool1'), bool1);
+
+      // bool2
+      assert.typeOf(store.get('bool2'), 'boolean');
+      assert.strictEqual(store.get('bool2'), bool2);
     });
   });
 
