@@ -103,7 +103,7 @@
   };
 
   Locally.prototype.set = function (key, value, options) {
-    if (!key || !value)
+    if (arguments.length < 2)
       throw new Error('Locally: no key or value given');
 
     options = options || {};
@@ -145,6 +145,9 @@
       _config[key].c = 1;
       value = lzstring.compressToUTF16(value.toString());
     }
+
+    key = String(key);
+    value = String(value);
 
     ls.setItem(key, value);
     _saveConfig();
@@ -277,7 +280,11 @@
 
       case 's':
       default:
-        return String(value);
+        if (value === 'null')
+          return null;
+        else if (value === 'undefined')
+          return undefined;
+        else return String(value);
         break;
     }
   }
