@@ -8,7 +8,7 @@ Locally works much like a caching software (e.g. Redis). Try the <a href="http:/
 
 ### Features
 - [Defining timeout for values to ensure some values will expire in time.](#user-content-timeout-support)
-- Type checking store and return ```Number```, ```String```, ```Array```, ```Object```, ```Date```, ```RegExp``` and ```Function``` values in their given forms.
+- Type checking store and return ```Number```, ```String```, ```Boolean```, ```Array```, ```Object```, ```Date```, ```RegExp``` and ```Function``` values in their given forms.
 - A much simpler API than originial localStorage while keeping all it's functions intact.
 - [Compression via LZW algorithm.](#user-content-compression)
 
@@ -76,7 +76,7 @@ Assigns a ```value``` to given ```key```. ```key``` is a ```string```. Basic usa
 store.set('key', 'value');
 ```
 Value can be anything. If it's a ```String```,
-```Number```, ```Array```, ```Object```, ```Date```, ```RegExp``` or ```Function```, ```.get()``` will return the value in it's correct type instead of a string.
+```Number```, ```Boolean```, ```Array```, ```Object```, ```Date```, ```RegExp``` or ```Function```, ```.get()``` will return the value in it's correct type instead of a string.
 ```js
 store.set('key', new Date());
 
