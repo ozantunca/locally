@@ -501,7 +501,7 @@ function runTests () {
         assert.isBelow(store.ttl('somekey'), 1000);
       }, 5);
 
-      setTimeout(function (done) {
+      setTimeout(function () {
         assert.isNull(store.get('somekey'));
         assert.equal(store.ttl('notexist'), -2);
         done();
@@ -517,7 +517,7 @@ function runTests () {
         assert.equal(store.ttl('somekey', true), '2s');
       }
 
-      setTimeout(function (done) {
+      setTimeout(function () {
         assert.isBelow(store.ttl('somekey'), 2000);
         done();
       }, 5);
@@ -542,7 +542,7 @@ function runTests () {
       assert.equal(store.persist('somekey'), 1);
       assert.equal(store.ttl('somekey'), -1);
 
-      setTimeout(function (done) {
+      setTimeout(function () {
         assert.isNotNull(store.get('somekey'));
         done();
       }, 1001);
