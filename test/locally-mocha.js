@@ -7,6 +7,7 @@ if (typeof exports === 'object') {
     localStorage = vars.localStorage;
     Store = vars.Store;
     store = new Store();
+    testMode = vars.testMode;
 
     runTests();
   };
@@ -26,14 +27,14 @@ function deepCompare () {
     // remember that NaN === NaN returns false
     // and isNaN(undefined) returns true
     if (isNaN(x) && isNaN(y) && typeof x === 'number' && typeof y === 'number') {
-         return true;
+      return true;
     }
 
     // Compare primitives and functions.
     // Check if both arguments link to the same object.
     // Especially useful on step when comparing prototypes
     if (x === y) {
-        return true;
+      return true;
     }
 
     // Works in case when functions are created in constructor.
@@ -133,10 +134,13 @@ function deepCompare () {
 }
 
 function runTests () {
+  var lenOfKeys = 0;
+
   describe('setting values', function set() {
     it('should add one value to localStorage', function () {
       var len = localStorage.length;
       store.set('key', 'value');
+      lenOfKeys++;
 
       // tests
       expectedLen(len + 1);
@@ -155,6 +159,7 @@ function runTests () {
     it('should add another value', function () {
       var len = localStorage.length;
       store.set('key2', 'some value');
+      lenOfKeys++;
 
       // tests
       expectedLen(len + 1);
@@ -165,6 +170,7 @@ function runTests () {
       var len = localStorage.length;
 
       store.set('key4', 'value', { ttl: 1000 });
+      lenOfKeys++;
 
       // tests
       expectedLen(len + 1);
@@ -173,6 +179,7 @@ function runTests () {
       setTimeout(function () {
         expectedLen(len);
         assert.isNull(store.get('key4'));
+        lenOfKeys--;
         done();
       }, 1010);
     });
@@ -181,6 +188,7 @@ function runTests () {
       var len = localStorage.length;
 
       store.set('key4', 'value', { ttl: '1s' });
+      lenOfKeys++;
 
       // tests
       expectedLen(len + 1);
@@ -189,6 +197,7 @@ function runTests () {
       setTimeout(function () {
         expectedLen(len);
         assert.isNull(store.get('key4'));
+        lenOfKeys--;
         done();
       }, 1010);
     });
@@ -200,51 +209,57 @@ function runTests () {
       assert.equal(store.ttl('overwrite'), -1);
     });
 
-    it('should cache a value using ms(\'2s\')', function (done) {
-      this.timeout(3000);
+    if (testMode !== 'light') {
+      it('should cache a value using ms(\'2s\')', function (done) {
+        this.timeout(3000);
 
-      var len = localStorage.length;
-      store.set('key5', 'value', '2s');
+        var len = localStorage.length;
+        store.set('key5', 'value', '2s');
+        lenOfKeys++;
 
-      expectedLen(len + 1);
-      assert.isNotNull(store.get('key5'));
-
-      setTimeout(function () {
-        assert.isNull(store.get('key5'));
-        expectedLen(len);
-        done();
-      }, 2010);
-    });
-
-    it('should cache a value using ms(\'1m\')', function (done) {
-      var len = localStorage.length;
-      store.set('key5', 'value', '1m');
-
-      expectedLen(len + 1);
-      assert.isNotNull(store.get('key5'));
-
-      setTimeout(function () {
+        expectedLen(len + 1);
         assert.isNotNull(store.get('key5'));
-        assert.isBelow(store.ttl('key5'), 60000);
-        assert.isAbove(store.ttl('key5'), 59000);
 
-        done();
-      }, 500);
-    });
+        setTimeout(function () {
+          assert.isNull(store.get('key5'));
+          expectedLen(len);
+          lenOfKeys--;
+          done();
+        }, 2010);
+      });
 
-    it('should cache a value using ms(\'2 days\')', function (done) {
-      var len = localStorage.length;
-      store.set('key6', 'value', '2 days');
+      it('should cache a value using ms(\'1m\')', function (done) {
+        var len = localStorage.length;
+        store.set('key5', 'value', '1m');
+        lenOfKeys++;
 
-      expectedLen(len + 1);
-      assert.isNotNull(store.get('key6'));
+        expectedLen(len + 1);
+        assert.isNotNull(store.get('key5'));
 
-      setTimeout(function () {
-        assert.isBelow(store.ttl('key6'), 60 * 60 * 24 * 2 * 1000);
+        setTimeout(function () {
+          assert.isNotNull(store.get('key5'));
+          assert.isBelow(store.ttl('key5'), 60000);
+          assert.isAbove(store.ttl('key5'), 59000);
 
-        done();
-      }, 1000);
-    });
+          done();
+        }, 500);
+      });
+
+      it('should cache a value using ms(\'2 days\')', function (done) {
+        var len = localStorage.length;
+        store.set('key6', 'value', '2 days');
+        lenOfKeys++;
+
+        expectedLen(len + 1);
+        assert.isNotNull(store.get('key6'));
+
+        setTimeout(function () {
+          assert.isBelow(store.ttl('key6'), 60 * 60 * 24 * 2 * 1000);
+
+          done();
+        }, 1000);
+      });
+    }
 
     it('should be able to store falsy values', function () {
       store.set('falsy1', null);
@@ -266,52 +281,55 @@ function runTests () {
     });
   });
 
-  describe('compression', function compression() {
-    it('should compress given value', function () {
-      store.set('compress1', 'tobecompressed', { compress: true });
+  if (testMode !== 'light') {
+    describe('compression', function compression() {
+      it('should compress given value', function () {
+        store.set('compress1', 'tobecompressed', { compress: true });
 
-      assert.isBelow(localStorage.getItem('compress1').length, 'tobecompressed'.length)
-      assert.equal(store.get('compress1').length, 'tobecompressed'.length);
-    });
+        assert.isBelow(localStorage.getItem('compress1').length, 'tobecompressed'.length)
+        assert.equal(store.get('compress1').length, 'tobecompressed'.length);
+      });
 
-    it('should compress all', function () {
-      var store3 = new Store({ compress: true });
+      it('should compress all', function () {
+        var store3 = new Store({ compress: true });
 
-      store3.set('shouldbecompressed', 'tobecompressed');
-      store3.set('shouldbecompressed2', 'tobecompressed');
+        store3.set('shouldbecompressed', 'tobecompressed');
+        store3.set('shouldbecompressed2', 'tobecompressed');
 
-      assert.isBelow(localStorage.getItem('shouldbecompressed').length, 'tobecompressed'.length)
-      assert.equal(store.get('shouldbecompressed'), 'tobecompressed');
+        assert.isBelow(localStorage.getItem('shouldbecompressed').length, 'tobecompressed'.length)
+        assert.equal(store.get('shouldbecompressed'), 'tobecompressed');
 
-      assert.isBelow(localStorage.getItem('shouldbecompressed').length, 'tobecompressed'.length)
-      assert.equal(store.get('shouldbecompressed2'), 'tobecompressed');
+        assert.isBelow(localStorage.getItem('shouldbecompressed').length, 'tobecompressed'.length)
+        assert.equal(store.get('shouldbecompressed2'), 'tobecompressed');
 
-      store.scan('*', function (value, key) {
-        assert.notEqual(localStorage.getItem(key), value);
+        store.scan('*', function (value, key) {
+          assert.notEqual(localStorage.getItem(key), value);
+        });
+      });
+
+      it('get() should return decompressed value', function () {
+        store.set('decompress1', 'tobedecompressed', { compress: true });
+
+        assert.equal(store.get('decompress1'), 'tobedecompressed');
+      });
+
+      it('should decompress all', function () {
+        new Store();
+
+        store.scan('*', function (value, key) {
+          assert.isNotNull(localStorage.getItem(key));
+          assert.equal(value, store.get(key));
+        });
       });
     });
-
-    it('get() should return decompressed value', function () {
-      store.set('decompress1', 'tobedecompressed', { compress: true });
-
-      assert.equal(store.get('decompress1'), 'tobedecompressed');
-    });
-
-    it('should decompress all', function () {
-      new Store();
-
-      store.scan('*', function (value, key) {
-        assert.isNotNull(localStorage.getItem(key));
-        assert.equal(value, store.get(key));
-      });
-    });
-  });
+  }
 
   describe('type checks', function () {
     it('should be able to add an object', function () {
       var len = localStorage.length;
       var obj = { 'some': 'object', 'number': 3, 'arr': [] };
       store.set('key3', obj);
+      lenOfKeys++;
 
       // tests
       expectedLen(len + 1);
@@ -344,7 +362,7 @@ function runTests () {
 
     it('should be able to save a Number', function () {
       var len = localStorage.length;
-      var num = 23014; // some random number
+      var num = Math.random(); // some random number
       store.set('num1', num);
 
       // tests
@@ -418,7 +436,7 @@ function runTests () {
 
       var keys = store.keys(/^key.*/);
       assert.typeOf(keys, 'array');
-      assert.lengthOf(keys, 5);
+      assert.lengthOf(keys, lenOfKeys);
 
       keys.forEach(function (k) {
         assert.equal(k.indexOf('key'), 0);
@@ -426,7 +444,7 @@ function runTests () {
 
       var keys = store.keys(/.*key.*/);
       assert.typeOf(keys, 'array');
-      assert.lengthOf(keys, 7);
+      assert.lengthOf(keys, lenOfKeys + 2);
 
       keys.forEach(function (k) {
         assert.isAbove(k.indexOf('key'), -1);
@@ -436,7 +454,7 @@ function runTests () {
       // on both ends and query like that
       var keys = store.keys('key');
       assert.typeOf(keys, 'array');
-      assert.lengthOf(keys, 7);
+      assert.lengthOf(keys, lenOfKeys + 2);
 
       keys.forEach(function (k) {
         assert.isAbove(k.indexOf('key'), -1);
@@ -455,7 +473,7 @@ function runTests () {
         assert.deepEqual(store.get(key), value);
       });
 
-      assert.equal(count, 7);
+      assert.equal(count, lenOfKeys + 2);
     });
   });
 
@@ -483,7 +501,7 @@ function runTests () {
         assert.isBelow(store.ttl('somekey'), 1000);
       }, 5);
 
-      setTimeout(function () {
+      setTimeout(function (done) {
         assert.isNull(store.get('somekey'));
         assert.equal(store.ttl('notexist'), -2);
         done();
@@ -495,12 +513,15 @@ function runTests () {
 
       assert.isAbove(store.ttl('somekey'), 0);
 
-      setTimeout(function () {
+      if (testMode !== 'light') {
+        assert.equal(store.ttl('somekey', true), '2s');
+      }
+
+      setTimeout(function (done) {
         assert.isBelow(store.ttl('somekey'), 2000);
         done();
       }, 5);
 
-      assert.equal(store.ttl('somekey', true), '2s');
     });
 
     it('should return -2 if key does not exist', function () {
@@ -521,7 +542,7 @@ function runTests () {
       assert.equal(store.persist('somekey'), 1);
       assert.equal(store.ttl('somekey'), -1);
 
-      setTimeout(function () {
+      setTimeout(function (done) {
         assert.isNotNull(store.get('somekey'));
         done();
       }, 1001);
@@ -603,7 +624,7 @@ function runTests () {
     });
 
     it('shouldnt forget timeout when starting from scratch', function (done) {
-      store.set('timeout', 'value', '1s');
+      store.set('timeout', 'value', 1000);
       var store4 = new Store();
 
       assert.notEqual(store4.ttl('timeout'), -1);
@@ -619,7 +640,7 @@ function runTests () {
     it('should remove timed out values on startup', function (done) {
       var len = localStorage.length;
 
-      store.set('timeout', 'value', '1s');
+      store.set('timeout', 'value', 1000);
 
       setTimeout(function () {
         new Store();

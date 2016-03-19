@@ -19,6 +19,7 @@
       document.addEventListener("DOMContentLoaded", function(event) {
         window.Store = window.Locally.Store;
         window.store = new Store();
+        window.testMode = 'distmin';
 
         var script = document.createElement('script');
         script.src = 'locally-mocha.js';

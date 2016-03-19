@@ -30,16 +30,21 @@ if (typeof localStorage === "undefined" || localStorage === null) {
   localStorage = window.localStorage = new LocalStorage('./test/storage');
 }
 
-if (argv.dist) {
-  Store = require('../dist/locally').Store
-} else if (argv.es6) {
-  Store = require('../dist/locally.es6').Store
-} else if (argv.es6min) {
-  Store = require('../dist/locally.es6.min').Store
-} else if (argv.distmin) {
-  Store = require('../dist/locally.min').Store
-} else {
-  Store = require('../src/locally').Store
+switch (argv.mode) {
+  case 'dist':
+    Store = require('../dist/locally').Store;
+    break;
+
+  case 'distmin':
+    Store = require('../dist/locally.min').Store;
+    break;
+
+  case 'light':
+    Store = require('../dist/light.min').Store;
+    break;
+
+  default:
+    Store = require('../src/locally').Store;
 }
 
 localStorage.setItem('preexisting', 'value');
@@ -49,7 +54,8 @@ describe('locally', function() {
   require('./locally-mocha.js')({
     assert: assert,
     localStorage: localStorage,
-    Store: Store
+    Store: Store,
+    testMode: argv.mode || 'src'
   });
 
   after(function () {

@@ -190,7 +190,13 @@
   }
 
   Locally.prototype.ttl = function (key, returnString) {
-    return _config[key] ? _config[key].ttl ? (!returnString ? _config[key].ttl - Date.now() : ms(_config[key].ttl - Date.now())) : -1 : -2;
+    return _config[key] ?
+      _config[key].ttl ?
+        !returnString ?
+          _config[key].ttl - Date.now()
+          : ms(_config[key].ttl - Date.now())
+        : -1
+      : -2;
   }
 
   Locally.prototype.persist = function (key) {

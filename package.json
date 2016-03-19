@@ -30,9 +30,10 @@
     }
   ],
   "scripts": {
-    "test": "mocha test/node-mocha.js; mocha test/node-mocha.js; --dist; mocha test/node-mocha.js --distmin;",
-    "build": "cp src/locally.js dist/locally.js; browserify src/locally.js -t babelify -o dist/locally.combined.js -s 'locallyjs'; uglifyjs dist/locally.combined.js -o dist/locally.min.js; rm dist/locally.combined.js;",
-    "simpletest": "mocha test/node-mocha.js"
+    "test": "mocha test/node-mocha.js; mocha test/node-mocha.js --mode=dist; mocha test/node-mocha.js --mode=distmin; mocha test/node-mocha.js --mode=light;",
+    "build": "cp src/locally.js dist/locally.js; browserify src/locally.js -t babelify -o dist/locally.combined.js -s 'locallyjs'; uglifyjs dist/locally.combined.js -o dist/locally.min.js; rm dist/locally.combined.js; browserify src/light.js -t babelify -o dist/locally-light.js -s 'locallyjs'; uglifyjs dist/locally-light.js -o dist/light.min.js; rm dist/locally-light.js;",
+    "simpletest": "mocha test/node-mocha.js",
+    "lighttest": "mocha test/node-mocha.js --mode=light"
   },
   "readmeFilename": "README.md",
   "homepage": "https://github.com/ozantunca/locally"

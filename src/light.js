@@ -1,9 +1,7 @@
 'use strict';
 
 (function () {
-  var ls = typeof window !== 'undefined' ? window.localStorage : null
-    , ms = require('ms')
-    , lzstring = require('lz-string');
+  var ls = typeof window !== 'undefined' ? window.localStorage : null;
 
   // Provide an in-memory fallback for
   // older browsers.
@@ -75,12 +73,10 @@
       _rebuildConfig();
     }
     else {
-      var deconfig = lzstring.decompressFromUTF16(_config);
-
       try {
-        _config = JSON.parse(deconfig || _config);
+        _config = JSON.parse(_config);
       } catch (e) {
-        if (!!deconfig) {
+        if (!!_config) {
           try {
             _config = JSON.parse(_config);
           } catch (e) {
@@ -113,7 +109,11 @@
     }
 
     if (typeof options.ttl === 'string') {
-      options.ttl = ms(options.ttl);
+      options.ttl = parseInt(options.ttl);
+
+      if (isNaN(options.ttl)) {
+        throw new Error('Locally: ttl should be a number in /light version of Locally.');
+      }
     }
 
     // Set TTL
@@ -143,7 +143,7 @@
     // compression
     if (options.compress || _compressAll) {
       _config[key].c = 1;
-      value = lzstring.compressToUTF16(value.toString());
+      value = String(value);
     }
 
     key = String(key);
@@ -189,12 +189,10 @@
     });
   }
 
-  Locally.prototype.ttl = function (key, returnString) {
+  Locally.prototype.ttl = function (key) {
     return _config[key] ?
       _config[key].ttl ?
-        !returnString ?
-          _config[key].ttl - Date.now()
-          : ms(_config[key].ttl - Date.now())
+        _config[key].ttl - Date.now()
         : -1
       : -2;
   }
@@ -231,7 +229,7 @@
 
   // Saves config to localStorage
   function _saveConfig() {
-    ls.setItem('locally-config', lzstring.compressToUTF16( JSON.stringify(_config)) );
+    ls.setItem('locally-config', JSON.stringify(_config) );
     return true;
   }
 
@@ -251,7 +249,7 @@
       return null;
     }
 
-    var temp, value = _config[key].c ? lzstring.decompressFromUTF16( ls.getItem(key) ) : ls.getItem(key);
+    var temp, value = ls.getItem(key);
 
     // Return value in correct type
     switch (_config[key].t) {
@@ -354,14 +352,14 @@
       // compressed then compress the value
       if (_compressAll && !_config[_keys[l]].c) {
         _config[_keys[l]].c = true;
-        ls.setItem(_keys[l], lzstring.compressToUTF16( ls.getItem(_keys[l]) ));
+        ls.setItem(_keys[l], ls.getItem(_keys[l]));
       }
       // if the value is compressed and
       // compressAll is not given then decompress
       // current value.
       else if (!_compressAll && _config[_keys[l]].c) {
         delete _config[_keys[l]].c;
-        ls.setItem(_keys[l], lzstring.decompressFromUTF16( ls.getItem(_keys[l]) ));
+        ls.setItem(_keys[l], ls.getItem(_keys[l]));
       }
 
       if (_config[_keys[l]].ttl) {
