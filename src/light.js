@@ -55,12 +55,11 @@
     }
   }
 
-  var _keys, _config, _compressAll, _timeouts = {};
+  var _keys, _config, _timeouts = {};
 
   var Locally = function (options) {
     // custom options
     options = options || {};
-    _compressAll = options.compress;
 
     // load current localStorage state
     _config = ls.getItem('locally-config');
@@ -139,12 +138,6 @@
 
     value = res.value;
     _config[key].t = res.type;
-
-    // compression
-    if (options.compress || _compressAll) {
-      _config[key].c = 1;
-      value = String(value);
-    }
 
     key = String(key);
     value = String(value);
@@ -347,20 +340,7 @@
     while (l--) {
       _keys[l] = ls.key(l);
       _config[_keys[l]] = _config[_keys[l]] || {};
-
-      // _compressAll is given and value is not
-      // compressed then compress the value
-      if (_compressAll && !_config[_keys[l]].c) {
-        _config[_keys[l]].c = true;
-        ls.setItem(_keys[l], ls.getItem(_keys[l]));
-      }
-      // if the value is compressed and
-      // compressAll is not given then decompress
-      // current value.
-      else if (!_compressAll && _config[_keys[l]].c) {
-        delete _config[_keys[l]].c;
-        ls.setItem(_keys[l], ls.getItem(_keys[l]));
-      }
+      ls.setItem(_keys[l], ls.getItem(_keys[l]));
 
       if (_config[_keys[l]].ttl) {
         _setTimeout(_keys[l], _config[_keys[l]].ttl - Date.now());
