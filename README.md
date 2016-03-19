@@ -3,7 +3,7 @@ Locally
 [![npm version](https://badge.fury.io/js/locallyjs.svg)](https://www.npmjs.org/package/locallyjs)
 [![Travis](https://travis-ci.org/ozantunca/locally.svg?branch=master)](https://travis-ci.org/ozantunca/locally)
 
-Locally is a localStorage manager that supports expirable items with timeout values and saves space by compressing them using LZW algorithm. W3C specification suggest 5MB of quota for every origin. Even though it's not a must, browsers tend to stay around that number thus giving our site an exhaustible storage in the long run. Locally's TTL support will take care of that. 
+Locally is a localStorage manager that supports expirable items with timeout values and saves space by compressing them using LZW algorithm. W3C specification suggest 5MB of quota for every origin. Even though it's not a must, browsers tend to stay around that number thus giving our site an exhaustible storage in the long run. Locally's TTL support will take care of that.
 Locally works much like a caching software (e.g. Redis). Try the <a href="http://demo.ozantunca.org/locally/" target="_blank">demo</a>.
 
 ### Features
@@ -13,7 +13,7 @@ Locally works much like a caching software (e.g. Redis). Try the <a href="http:/
 - [Compression via LZW algorithm.](#user-content-compression)
 
 
-Locally is installable via 
+Locally is installable via
 
 - [npm](http://bower.io/): `npm install locallyjs`
 - [bower](http://bower.io/): `bower install locallyjs`
@@ -58,7 +58,7 @@ var Store = window.Locally.Store
 ```
 or if you are already using **browserify**
 ```js
-var Store = require('locally').Store
+var Store = require('locallyjs').Store
   , store = new Store();
 ```
 If **compression** for all values is wanted to be done as default, Locally can be initialized to indicate that.
@@ -66,8 +66,15 @@ If **compression** for all values is wanted to be done as default, Locally can b
 var store = new Store({ compress: true });
 ```
 Locally will compress all current and and upcoming values. If you have compressed values but want to decompress them all and continue uncompressed, Locally will perform decompression on all currently compressed values once it's initialized as:
-```js 
+```js
 var store = new Store();
+```
+
+#### Light Version
+Since version v0.3.3 `locally` has a `light` version that does not support compression and `ms` module for those who doesn't want these features and wants to save their size. You can initialize light version like below:
+```js
+var Store = require('locallyjs/light').Store
+  , store = new Store();
 ```
 
 #### .set(key, value[, options])

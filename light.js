@@ -1,1 +1,1 @@
-module.exports = require('dist/light.min.js');
+module.exports = require('./dist/light.min.js');
