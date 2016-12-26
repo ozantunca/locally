@@ -65,7 +65,7 @@ If **compression** for all values is wanted to be done as default, Locally can b
 ```js
 var store = new Store({ compress: true });
 ```
-Locally will compress all current and and upcoming values. If you have compressed values but want to decompress them all and continue uncompressed, Locally will perform decompression on all currently compressed values once it's initialized as:
+Locally will compress all current and upcoming values. If you have compressed values but want to decompress them all and continue uncompressed, Locally will perform decompression on all currently compressed values once it's initialized as:
 ```js
 var store = new Store();
 ```
@@ -247,7 +247,7 @@ store.length; // 2
 ```
 
 #### Compression
-**Locally** by default does not compress values unless it's told to do otherwise. It can be configured to compress all values by giving parameter on initialization, or an extra parameter can be given to **.set()** so that **.set()** will compress that only that value.
+**Locally** by default does not compress values unless it's told to do otherwise. It can be configured to compress all values by giving parameter on initialization, or an extra parameter can be given to **.set()** so that **.set()** will compress only that value.
 
 ### How Locally Works
 Locally holds an extra object in localStorage called ```locally-config``` to save TTL and type information. It automatically updates config on page load using current values in localStorage to make sure it doesn't miss any value added to localStorage without using Locally.
