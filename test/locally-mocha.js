@@ -184,23 +184,25 @@ function runTests () {
       }, 1010);
     });
 
-    it('should cache a value with options object when ttl is string', function (done) {
-      var len = localStorage.length;
+    if (testMode !== 'light') {
+      it('should cache a value with options object when ttl is string', function (done) {
+        var len = localStorage.length;
 
-      store.set('key4', 'value', { ttl: '1s' });
-      lenOfKeys++;
+        store.set('key4', 'value', { ttl: '1s' });
+        lenOfKeys++;
 
-      // tests
-      expectedLen(len + 1);
-      assert.isNotNull(store.get('key4'));
+        // tests
+        expectedLen(len + 1);
+        assert.isNotNull(store.get('key4'));
 
-      setTimeout(function () {
-        expectedLen(len);
-        assert.isNull(store.get('key4'));
-        lenOfKeys--;
-        done();
-      }, 1010);
-    });
+        setTimeout(function () {
+          expectedLen(len);
+          assert.isNull(store.get('key4'));
+          lenOfKeys--;
+          done();
+        }, 1010);
+      });
+    }
 
     it('should overwrite timeout if new value is set', function () {
       store.set('overwrite', 'somevalue', 1000);
