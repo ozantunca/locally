@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "lz-string": "^1.4.4",
-    "ms": "^0.7.1"
+    "ms": "^2.1.2"
   },
   "repository": {
     "type": "git",
