@@ -8,7 +8,7 @@
     "babelify": "^6.3.0",
     "chai": "^2.1.2",
     "mocha": "*",
-    "node-localstorage": "^0.5.0",
+    "node-localstorage": "^1.3.1",
     "optimist": "^0.6.1",
     "uglifyjs": "^2.4.10"
   },
