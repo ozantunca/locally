@@ -3,13 +3,17 @@
   "description": "Locally is a localStorage manager that supports expirable values with TTL and saves space by compressing them using LZW algorithm.",
   "version": "0.3.3",
   "main": "./dist/locally.js",
-  "author": "Ozan Tunca <ozan@ozantunca.org> (http://www.ozantunca.org/)",
+  "author": "Ozan Tunca <ozan@ozantunca.org> (https://ozantunca.org)",
   "devDependencies": {
-    "babelify": "^6.3.0",
+    "@types/lz-string": "^1.3.34",
+    "@types/ms": "^0.7.31",
     "chai": "^2.1.2",
+    "eslint": "^7.9.0",
     "mocha": "*",
     "node-localstorage": "^0.5.0",
     "optimist": "^0.6.1",
+    "prettier": "^2.1.1",
+    "typescript": "^4.0.2",
     "uglifyjs": "^2.4.10"
   },
   "dependencies": {
@@ -30,8 +34,9 @@
     }
   ],
   "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "eslint ./src/**/*",
     "test": "mocha test/node-mocha.js; mocha test/node-mocha.js --mode=dist; mocha test/node-mocha.js --mode=distmin; mocha test/node-mocha.js --mode=light;",
-    "build": "cp src/locally.js dist/locally.js; browserify src/locally.js -t babelify -o dist/locally.combined.js -s 'locallyjs'; uglifyjs dist/locally.combined.js -o dist/locally.min.js; rm dist/locally.combined.js; browserify src/light.js -t babelify -o dist/locally-light.js -s 'locallyjs'; uglifyjs dist/locally-light.js -o dist/light.min.js; rm dist/locally-light.js;",
     "simpletest": "mocha test/node-mocha.js",
     "lighttest": "mocha test/node-mocha.js --mode=light"
   },
