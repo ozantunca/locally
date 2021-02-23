@@ -5,7 +5,7 @@
   "main": "./dist/locally.js",
   "author": "Ozan Tunca <ozan@ozantunca.org> (http://www.ozantunca.org/)",
   "devDependencies": {
-    "babelify": "^6.3.0",
+    "babelify": "^10.0.0",
     "chai": "^2.1.2",
     "mocha": "*",
     "node-localstorage": "^0.5.0",
