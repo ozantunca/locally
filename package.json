@@ -6,7 +6,7 @@
   "author": "Ozan Tunca <ozan@ozantunca.org> (http://www.ozantunca.org/)",
   "devDependencies": {
     "babelify": "^6.3.0",
-    "chai": "^2.1.2",
+    "chai": "^4.3.1",
     "mocha": "*",
     "node-localstorage": "^0.5.0",
     "optimist": "^0.6.1",
