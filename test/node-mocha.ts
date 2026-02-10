@@ -1,7 +1,8 @@
-const assert = require('chai').assert;
-const fs = require('fs');
+import { assert } from 'chai';
+import fs from 'fs';
+import optimist from 'optimist';
 
-const argvParsed = require('optimist').argv as { mode?: string };
+const argvParsed = optimist.argv as { mode?: string };
 
 function deleteFolderRecursive(path: string) {
   if (fs.existsSync(path)) {

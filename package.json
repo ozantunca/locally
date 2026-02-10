@@ -5,8 +5,10 @@
   "main": "./dist/locally.js",
   "author": "Ozan Tunca <ozan@ozantunca.org> (http://www.ozantunca.org/)",
   "devDependencies": {
+    "@types/chai": "^5.2.3",
     "@types/mocha": "^10.0.0",
     "@types/node": "^20.0.0",
+    "@types/optimist": "^0.0.33",
     "babelify": "^6.3.0",
     "browserify": "^17.0.0",
     "chai": "^2.1.2",
