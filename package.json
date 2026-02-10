@@ -36,11 +36,11 @@
   ],
   "scripts": {
     "pretest": "tsc",
-    "test": "mocha --require ts-node/register test/node-mocha.ts && mocha --require ts-node/register test/node-mocha.ts --mode=dist && mocha --require ts-node/register test/node-mocha.ts --mode=distmin && mocha --require ts-node/register test/node-mocha.ts --mode=light",
+    "test": "mocha --require ts-node/register test/node-mocha.ts --exit && mocha --require ts-node/register test/node-mocha.ts --mode=dist --exit && mocha --require ts-node/register test/node-mocha.ts --mode=distmin --exit && mocha --require ts-node/register test/node-mocha.ts --mode=light --exit",
     "build": "tsc && npx browserify dist/locally.js -o dist/locally.combined.js -s locallyjs && npx uglifyjs dist/locally.combined.js -o dist/locally.min.js && rm -f dist/locally.combined.js && npx browserify dist/light.js -o dist/locally-light.js -s locallyjs && npx uglifyjs dist/locally-light.js -o dist/light.min.js && rm -f dist/locally-light.js && npm run build:browsertest",
     "build:browsertest": "tsc -p tsconfig.browser-test.json",
-    "simpletest": "mocha --require ts-node/register test/node-mocha.ts",
-    "lighttest": "mocha --require ts-node/register test/node-mocha.ts --mode=light"
+    "simpletest": "mocha --require ts-node/register test/node-mocha.ts --exit",
+    "lighttest": "mocha --require ts-node/register test/node-mocha.ts --mode=light --exit"
   },
   "readmeFilename": "README.md",
   "homepage": "https://github.com/ozantunca/locally"

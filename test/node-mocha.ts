@@ -5,7 +5,7 @@ const argvParsed = require('optimist').argv as { mode?: string };
 
 function deleteFolderRecursive(path: string) {
   if (fs.existsSync(path)) {
-    fs.readdirSync(path).forEach((file, index) => {
+    fs.readdirSync(path).forEach((file: string) => {
       const curPath = path + '/' + file;
       if (fs.lstatSync(curPath).isDirectory()) {
         deleteFolderRecursive(curPath);
@@ -22,19 +22,17 @@ if (!fs.existsSync('test/storage')) {
 
 deleteFolderRecursive('test/storage');
 
-declare global {
-  var window: { localStorage?: Storage } | undefined;
-  var localStorage: Storage;
-}
-
+const g = global as unknown as { window?: { localStorage?: Storage }; localStorage?: Storage };
+let testLocalStorage: Storage;
 let LocalStorage: new (path: string) => Storage;
-if (typeof localStorage === 'undefined' || localStorage === null) {
+if (typeof g.localStorage === 'undefined' || g.localStorage === null) {
   LocalStorage = require('node-localstorage').LocalStorage;
   const storage = new LocalStorage('./test/storage');
-  (global as unknown as { window: { localStorage: Storage }; localStorage: Storage }).window = {
-    localStorage: storage
-  };
-  (global as unknown as { localStorage: Storage }).localStorage = storage;
+  g.window = { localStorage: storage };
+  g.localStorage = storage;
+  testLocalStorage = storage;
+} else {
+  testLocalStorage = g.localStorage;
 }
 
 type StoreConstructor = new (options?: object) => {
@@ -70,12 +68,12 @@ switch (argvParsed.mode) {
     Store = require('../dist/locally').Store;
 }
 
-localStorage.setItem('preexisting', 'value');
+testLocalStorage.setItem('preexisting', 'value');
 
 describe('locally', function () {
   require('./locally-mocha')({
     assert,
-    localStorage,
+    localStorage: testLocalStorage,
     Store,
     testMode: (argvParsed.mode as string) || 'src'
   });
@@ -85,3 +83,5 @@ describe('locally', function () {
     fs.rmdirSync('test/storage');
   });
 });
+
+export {};
