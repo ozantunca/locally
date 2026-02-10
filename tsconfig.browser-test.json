@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "module": "none",
+    "lib": ["ES5", "DOM"],
+    "strict": false,
+    "skipLibCheck": true,
+    "noEmit": false,
+    "outDir": "./test",
+    "rootDir": "./test",
+    "types": ["mocha", "node"],
+    "moduleResolution": "node"
+  },
+  "include": ["test/locally-mocha.ts"],
+  "exclude": ["test/node-mocha.ts"]
+}

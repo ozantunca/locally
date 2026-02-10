@@ -5,12 +5,17 @@
   "main": "./dist/locally.js",
   "author": "Ozan Tunca <ozan@ozantunca.org> (http://www.ozantunca.org/)",
   "devDependencies": {
+    "@types/mocha": "^10.0.0",
+    "@types/node": "^20.0.0",
     "babelify": "^6.3.0",
+    "browserify": "^17.0.0",
     "chai": "^2.1.2",
     "mocha": "*",
     "node-localstorage": "^0.5.0",
     "optimist": "^0.6.1",
-    "uglifyjs": "^2.4.10"
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0",
+    "uglify-js": "^3.19.3"
   },
   "dependencies": {
     "lz-string": "^1.4.4",
@@ -30,10 +35,12 @@
     }
   ],
   "scripts": {
-    "test": "mocha test/node-mocha.js --exit; mocha test/node-mocha.js --mode=dist --exit; mocha test/node-mocha.js --mode=distmin --exit; mocha test/node-mocha.js --mode=light --exit",
-    "build": "cp src/locally.js dist/locally.js; browserify src/locally.js -t babelify -o dist/locally.combined.js -s 'locallyjs'; uglifyjs dist/locally.combined.js -o dist/locally.min.js; rm dist/locally.combined.js; browserify src/light.js -t babelify -o dist/locally-light.js -s 'locallyjs'; uglifyjs dist/locally-light.js -o dist/light.min.js; rm dist/locally-light.js;",
-    "simpletest": "mocha test/node-mocha.js --exit",
-    "lighttest": "mocha test/node-mocha.js --mode=light --exit"
+    "pretest": "tsc",
+    "test": "mocha --require ts-node/register test/node-mocha.ts && mocha --require ts-node/register test/node-mocha.ts --mode=dist && mocha --require ts-node/register test/node-mocha.ts --mode=distmin && mocha --require ts-node/register test/node-mocha.ts --mode=light",
+    "build": "tsc && npx browserify dist/locally.js -o dist/locally.combined.js -s locallyjs && npx uglifyjs dist/locally.combined.js -o dist/locally.min.js && rm -f dist/locally.combined.js && npx browserify dist/light.js -o dist/locally-light.js -s locallyjs && npx uglifyjs dist/locally-light.js -o dist/light.min.js && rm -f dist/locally-light.js && npm run build:browsertest",
+    "build:browsertest": "tsc -p tsconfig.browser-test.json",
+    "simpletest": "mocha --require ts-node/register test/node-mocha.ts",
+    "lighttest": "mocha --require ts-node/register test/node-mocha.ts --mode=light"
   },
   "readmeFilename": "README.md",
   "homepage": "https://github.com/ozantunca/locally"

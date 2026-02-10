@@ -1,8 +1,6 @@
 'use strict';
 /// <reference path="globals.d.ts" />
 (function () {
-    var ms = require('ms');
-    var lzstring = require('lz-string');
     var ls = typeof window !== 'undefined' ? window.localStorage : null;
     // Provide an in-memory fallback for older browsers.
     if (!ls) {
@@ -59,23 +57,20 @@
     };
     var _keys = [];
     var _config = {};
-    var _compressAll = false;
     var _timeouts = {};
     function Locally(options) {
         options = options || {};
-        _compressAll = !!options.compress;
         var configStr = ls.getItem('locally-config');
         if (!configStr) {
             _config = {};
             _rebuildConfig();
         }
         else {
-            var deconfig = lzstring.decompressFromUTF16(configStr);
             try {
-                _config = JSON.parse(deconfig || configStr);
+                _config = JSON.parse(configStr);
             }
             catch (e) {
-                if (!!deconfig) {
+                if (!!configStr) {
                     try {
                         _config = JSON.parse(configStr);
                     }
@@ -103,7 +98,10 @@
             opts = { ttl: options };
         }
         if (typeof opts.ttl === 'string') {
-            opts.ttl = ms(opts.ttl);
+            opts.ttl = parseInt(opts.ttl, 10);
+            if (isNaN(opts.ttl)) {
+                throw new Error("Locally: ttl should be a number in /light version of Locally.");
+            }
         }
         _config[key] = _config[key] || {};
         if (_keys.indexOf(key) === -1) {
@@ -119,10 +117,6 @@
         var res = _getType(value);
         value = res.value;
         _config[key].t = res.type;
-        if (opts.compress || _compressAll) {
-            _config[key].c = 1;
-            value = lzstring.compressToUTF16(value.toString());
-        }
         var keyStr = String(key);
         var valueStr = String(value);
         ls.setItem(keyStr, valueStr);
@@ -156,14 +150,13 @@
             fn(_get(keyName), keyName);
         });
     };
-    Locally.prototype.ttl = function (key, returnString) {
+    Locally.prototype.ttl = function (key) {
         var cfg = _config[key];
         if (!cfg)
             return -2;
         if (!cfg.ttl)
             return -1;
-        var remaining = cfg.ttl - Date.now();
-        return !returnString ? remaining : ms(remaining);
+        return cfg.ttl - Date.now();
     };
     Locally.prototype.persist = function (key) {
         return _config[key]
@@ -193,7 +186,7 @@
         }
     }
     function _saveConfig() {
-        ls.setItem('locally-config', lzstring.compressToUTF16(JSON.stringify(_config)));
+        ls.setItem('locally-config', JSON.stringify(_config));
         return true;
     }
     function _get(key) {
@@ -206,16 +199,14 @@
             return null;
         }
         var temp;
-        var value = _config[key].c
-            ? lzstring.decompressFromUTF16(ls.getItem(key) || '')
-            : ls.getItem(key);
+        var value = ls.getItem(key);
         switch (_config[key].t) {
             case 'o':
                 try {
-                    value = JSON.parse(value);
+                    return JSON.parse(value);
                 }
                 catch (e) { }
-                return value;
+                return null;
             case 'd':
                 return new Date(parseInt(value, 10));
             case 'r':
@@ -280,14 +271,7 @@
         while (l--) {
             _keys[l] = ls.key(l) || '';
             _config[_keys[l]] = _config[_keys[l]] || {};
-            if (_compressAll && !_config[_keys[l]].c) {
-                _config[_keys[l]].c = 1;
-                ls.setItem(_keys[l], lzstring.compressToUTF16(ls.getItem(_keys[l]) || ''));
-            }
-            else if (!_compressAll && _config[_keys[l]].c) {
-                delete _config[_keys[l]].c;
-                ls.setItem(_keys[l], lzstring.decompressFromUTF16(ls.getItem(_keys[l]) || '') || '');
-            }
+            ls.setItem(_keys[l], ls.getItem(_keys[l]) || '');
             if (_config[_keys[l]].ttl) {
                 _setTimeout(_keys[l], _config[_keys[l]].ttl - Date.now());
             }
@@ -327,4 +311,4 @@
         };
     }
 })();
-//# sourceMappingURL=locally.js.map
+//# sourceMappingURL=light.js.map
