@@ -1,28 +1,6 @@
-"use strict";
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key2 of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key2) && key2 !== except)
-        __defProp(to, key2, { get: () => from[key2], enumerable: !(desc = __getOwnPropDesc(from, key2)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
-// src/light.ts
-var light_exports = {};
-__export(light_exports, {
-  Store: () => Locally
-});
-module.exports = __toCommonJS(light_exports);
+// src/locally.ts
+import ms from "ms";
+import * as lzstring from "lz-string";
 var ls = typeof window !== "undefined" ? window.localStorage : null;
 if (!ls) {
   const memoryStorage = {
@@ -75,18 +53,21 @@ var utils = {
 };
 var _keys = [];
 var _config = {};
+var _compressAll = false;
 var _timeouts = {};
 function Locally(options) {
   options = options || {};
+  _compressAll = !!options.compress;
   const configStr = ls.getItem("locally-config");
   if (!configStr) {
     _config = {};
     _rebuildConfig();
   } else {
+    const deconfig = lzstring.decompressFromUTF16(configStr);
     try {
-      _config = JSON.parse(configStr);
+      _config = JSON.parse(deconfig || configStr);
     } catch (e) {
-      if (!!configStr) {
+      if (!!deconfig) {
         try {
           _config = JSON.parse(configStr);
         } catch (e2) {
@@ -110,12 +91,7 @@ Locally.prototype.set = function(key2, value2, options) {
     opts = { ttl: options };
   }
   if (typeof opts.ttl === "string") {
-    opts.ttl = parseInt(opts.ttl, 10);
-    if (isNaN(opts.ttl)) {
-      throw new Error(
-        "Locally: ttl should be a number in /light version of Locally."
-      );
-    }
+    opts.ttl = ms(opts.ttl);
   }
   _config[key2] = _config[key2] || {};
   if (_keys.indexOf(key2) === -1) {
@@ -130,6 +106,10 @@ Locally.prototype.set = function(key2, value2, options) {
   const res = _getType(value2);
   value2 = res.value;
   _config[key2].t = res.type;
+  if (opts.compress || _compressAll) {
+    _config[key2].c = 1;
+    value2 = lzstring.compressToUTF16(value2.toString());
+  }
   const keyStr = String(key2);
   const valueStr = String(value2);
   ls.setItem(keyStr, valueStr);
@@ -157,11 +137,12 @@ Locally.prototype.scan = function(key2, fn) {
     fn(_get(keyName), keyName);
   });
 };
-Locally.prototype.ttl = function(key2) {
+Locally.prototype.ttl = function(key2, returnString) {
   const cfg = _config[key2];
   if (!cfg) return -2;
   if (!cfg.ttl) return -1;
-  return cfg.ttl - Date.now();
+  const remaining = cfg.ttl - Date.now();
+  return !returnString ? remaining : ms(remaining);
 };
 Locally.prototype.persist = function(key2) {
   return _config[key2] ? !!(delete _config[key2].ttl && _saveConfig() && _clearTimeout(key2)) : false;
@@ -187,7 +168,7 @@ function _remove(key2) {
   }
 }
 function _saveConfig() {
-  ls.setItem("locally-config", JSON.stringify(_config));
+  ls.setItem("locally-config", lzstring.compressToUTF16(JSON.stringify(_config)));
   return true;
 }
 function _get(key) {
@@ -199,14 +180,14 @@ function _get(key) {
     return null;
   }
   let temp;
-  const value = ls.getItem(key);
+  let value = _config[key].c ? lzstring.decompressFromUTF16(ls.getItem(key) || "") : ls.getItem(key);
   switch (_config[key].t) {
     case "o":
       try {
-        return JSON.parse(value);
+        value = JSON.parse(value);
       } catch (e) {
       }
-      return null;
+      return value;
     case "d":
       return new Date(parseInt(value, 10));
     case "r":
@@ -266,7 +247,13 @@ function _rebuildConfig() {
   while (l--) {
     _keys[l] = ls.key(l) || "";
     _config[_keys[l]] = _config[_keys[l]] || {};
-    ls.setItem(_keys[l], ls.getItem(_keys[l]) || "");
+    if (_compressAll && !_config[_keys[l]].c) {
+      _config[_keys[l]].c = 1;
+      ls.setItem(_keys[l], lzstring.compressToUTF16(ls.getItem(_keys[l]) || ""));
+    } else if (!_compressAll && _config[_keys[l]].c) {
+      delete _config[_keys[l]].c;
+      ls.setItem(_keys[l], lzstring.decompressFromUTF16(ls.getItem(_keys[l]) || "") || "");
+    }
     if (_config[_keys[l]].ttl) {
       _setTimeout(_keys[l], _config[_keys[l]].ttl - Date.now());
     }
@@ -292,8 +279,7 @@ function _clearTimeout(key2) {
   }
   return false;
 }
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
-  Store
-});
-//# sourceMappingURL=light.js.map
+export {
+  Locally as Store
+};
+//# sourceMappingURL=locally.mjs.map

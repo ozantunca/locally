@@ -1,330 +1,320 @@
-'use strict';
-/// <reference path="globals.d.ts" />
-(function () {
-    var ms = require('ms');
-    var lzstring = require('lz-string');
-    var ls = typeof window !== 'undefined' ? window.localStorage : null;
-    // Provide an in-memory fallback for older browsers.
-    if (!ls) {
-        var memoryStorage = {
-            _data: {},
-            setItem: function (id, val) {
-                return (this._data[id] = String(val));
-            },
-            getItem: function (id) {
-                return this._data.hasOwnProperty(id) ? this._data[id] : undefined;
-            },
-            removeItem: function (id) {
-                return delete this._data[id];
-            },
-            key: function (index) {
-                for (var key in this._data) {
-                    if (!(index--)) {
-                        return key;
-                    }
-                }
-                return null;
-            },
-            clear: function () {
-                return (this._data = {});
-            },
-            get length() {
-                return Object.keys(this._data).length;
-            }
-        };
-        ls = memoryStorage;
+"use strict";
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key2 of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key2) && key2 !== except)
+        __defProp(to, key2, { get: () => from[key2], enumerable: !(desc = __getOwnPropDesc(from, key2)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// src/locally.ts
+var locally_exports = {};
+__export(locally_exports, {
+  Store: () => Locally
+});
+module.exports = __toCommonJS(locally_exports);
+var import_ms = __toESM(require("ms"));
+var lzstring = __toESM(require("lz-string"));
+var ls = typeof window !== "undefined" ? window.localStorage : null;
+if (!ls) {
+  const memoryStorage = {
+    _data: {},
+    setItem: function(id, val) {
+      return this._data[id] = String(val);
+    },
+    getItem: function(id) {
+      return this._data.hasOwnProperty(id) ? this._data[id] : void 0;
+    },
+    removeItem: function(id) {
+      return delete this._data[id];
+    },
+    key: function(index) {
+      for (const key2 in this._data) {
+        if (!index--) {
+          return key2;
+        }
+      }
+      return null;
+    },
+    clear: function() {
+      return this._data = {};
+    },
+    get length() {
+      return Object.keys(this._data).length;
     }
-    var utils = {
-        each: function (arr, iteratee) {
-            var l = arr.length;
-            while (l--)
-                iteratee(arr[l], l);
-        },
-        map: function (arr, iteratee) {
-            var newArr = new Array(arr.length);
-            var l = arr.length;
-            while (l--)
-                newArr[l] = iteratee(arr[l], l);
-            return newArr;
-        },
-        filter: function (arr, iteratee) {
-            var newArr = [];
-            var l = arr.length;
-            while (l--) {
-                if (iteratee(arr[l], l))
-                    newArr.push(arr[l]);
-            }
-            return newArr;
-        }
-    };
-    var _keys = [];
-    var _config = {};
-    var _compressAll = false;
-    var _timeouts = {};
-    function Locally(options) {
-        options = options || {};
-        _compressAll = !!options.compress;
-        var configStr = ls.getItem('locally-config');
-        if (!configStr) {
-            _config = {};
-            _rebuildConfig();
-        }
-        else {
-            var deconfig = lzstring.decompressFromUTF16(configStr);
-            try {
-                _config = JSON.parse(deconfig || configStr);
-            }
-            catch (e) {
-                if (!!deconfig) {
-                    try {
-                        _config = JSON.parse(configStr);
-                    }
-                    catch (e2) {
-                        throw new Error('Locally: config is corrupted');
-                    }
-                }
-                else
-                    throw new Error('Locally: config is corrupted');
-            }
-            _rebuildConfig();
-        }
-        _saveConfig();
-        Object.defineProperty(this, 'length', {
-            get: function () {
-                return _keys.length;
-            }
-        });
+  };
+  ls = memoryStorage;
+}
+var utils = {
+  each: function(arr, iteratee) {
+    let l = arr.length;
+    while (l--) iteratee(arr[l], l);
+  },
+  map: function(arr, iteratee) {
+    const newArr = new Array(arr.length);
+    let l = arr.length;
+    while (l--) newArr[l] = iteratee(arr[l], l);
+    return newArr;
+  },
+  filter: function(arr, iteratee) {
+    const newArr = [];
+    let l = arr.length;
+    while (l--) {
+      if (iteratee(arr[l], l)) newArr.push(arr[l]);
     }
-    Locally.prototype.set = function (key, value, options) {
-        if (arguments.length < 2)
-            throw new Error('Locally: no key or value given');
-        var opts = options || {};
-        if (typeof options !== 'object') {
-            opts = { ttl: options };
+    return newArr;
+  }
+};
+var _keys = [];
+var _config = {};
+var _compressAll = false;
+var _timeouts = {};
+function Locally(options) {
+  options = options || {};
+  _compressAll = !!options.compress;
+  const configStr = ls.getItem("locally-config");
+  if (!configStr) {
+    _config = {};
+    _rebuildConfig();
+  } else {
+    const deconfig = lzstring.decompressFromUTF16(configStr);
+    try {
+      _config = JSON.parse(deconfig || configStr);
+    } catch (e) {
+      if (!!deconfig) {
+        try {
+          _config = JSON.parse(configStr);
+        } catch (e2) {
+          throw new Error("Locally: config is corrupted");
         }
-        if (typeof opts.ttl === 'string') {
-            opts.ttl = ms(opts.ttl);
-        }
-        _config[key] = _config[key] || {};
-        if (_keys.indexOf(key) === -1) {
-            _keys.push(key);
-        }
-        if (opts.ttl && !isNaN(opts.ttl)) {
-            _clearTimeout(key);
-            _setTimeout(key, opts.ttl);
-        }
-        else if (_config[key].ttl) {
-            _clearTimeout(key);
-        }
-        var res = _getType(value);
-        value = res.value;
-        _config[key].t = res.type;
-        if (opts.compress || _compressAll) {
-            _config[key].c = 1;
-            value = lzstring.compressToUTF16(value.toString());
-        }
-        var keyStr = String(key);
-        var valueStr = String(value);
-        ls.setItem(keyStr, valueStr);
-        _saveConfig();
-    };
-    Locally.prototype.get = function (key) {
-        return Array.isArray(key)
-            ? utils.map(key, function (item) { return _get(item); })
-            : _get(key);
-    };
-    Locally.prototype.keys = function (pattern) {
-        if (!pattern || pattern === '*')
-            return _keys.slice(0);
-        var regex = !(pattern instanceof RegExp)
-            ? new RegExp('.*' + pattern + '.*')
-            : pattern;
-        return utils.filter(_keys, function (key) { return regex.test(key); });
-    };
-    Locally.prototype.remove = function (key) {
-        if (typeof key === 'undefined')
-            throw new Error("Locally: 'remove' requires a key");
-        if (Array.isArray(key)) {
-            utils.each(key, _remove);
-        }
-        else {
-            _remove(key);
-        }
-    };
-    Locally.prototype.scan = function (key, fn) {
-        return utils.each(this.keys(key), function (keyName) {
-            fn(_get(keyName), keyName);
-        });
-    };
-    Locally.prototype.ttl = function (key, returnString) {
-        var cfg = _config[key];
-        if (!cfg)
-            return -2;
-        if (!cfg.ttl)
-            return -1;
-        var remaining = cfg.ttl - Date.now();
-        return !returnString ? remaining : ms(remaining);
-    };
-    Locally.prototype.persist = function (key) {
-        return _config[key]
-            ? !!(delete _config[key].ttl && _saveConfig() && _clearTimeout(key))
-            : false;
-    };
-    Locally.prototype.expire = function (key, ttl) {
-        return _config[key]
-            ? !!((_config[key].ttl = Date.now() + ttl) && _saveConfig())
-            : false;
-    };
-    Locally.prototype.clear = function () {
-        ls.clear();
-        _config = {};
-        _keys = [];
-        return _saveConfig();
-    };
-    Locally.prototype.key = function (index) {
-        return _keys[index];
-    };
-    function _remove(key) {
-        var i = _keys.indexOf(key);
-        if (i > -1) {
-            ls.removeItem(key);
-            _keys.splice(_keys.indexOf(key), 1);
-            delete _config[key];
-        }
+      } else throw new Error("Locally: config is corrupted");
     }
-    function _saveConfig() {
-        ls.setItem('locally-config', lzstring.compressToUTF16(JSON.stringify(_config)));
-        return true;
+    _rebuildConfig();
+  }
+  _saveConfig();
+  Object.defineProperty(this, "length", {
+    get: function() {
+      return _keys.length;
     }
-    function _get(key) {
-        if (typeof key === 'undefined' || !_config[key])
-            return null;
-        if (_config[key].ttl && _config[key].ttl < Date.now()) {
-            delete _config[key];
-            _saveConfig();
-            _remove(key);
-            return null;
-        }
-        var temp;
-        var value = _config[key].c
-            ? lzstring.decompressFromUTF16(ls.getItem(key) || '')
-            : ls.getItem(key);
-        switch (_config[key].t) {
-            case 'o':
-                try {
-                    value = JSON.parse(value);
-                }
-                catch (e) { }
-                return value;
-            case 'd':
-                return new Date(parseInt(value, 10));
-            case 'r':
-                return new RegExp(value.substring(1, value.length - 1));
-            case 'f':
-                eval('temp = ' + value);
-                return temp;
-            case 'n':
-                return Number(value);
-            case 'b':
-                return value === '1';
-            case 's':
-            default:
-                if (value === 'null')
-                    return null;
-                else if (value === 'undefined')
-                    return undefined;
-                else
-                    return String(value);
-        }
+  });
+}
+Locally.prototype.set = function(key2, value2, options) {
+  if (arguments.length < 2) throw new Error("Locally: no key or value given");
+  let opts = options || {};
+  if (typeof options !== "object") {
+    opts = { ttl: options };
+  }
+  if (typeof opts.ttl === "string") {
+    opts.ttl = (0, import_ms.default)(opts.ttl);
+  }
+  _config[key2] = _config[key2] || {};
+  if (_keys.indexOf(key2) === -1) {
+    _keys.push(key2);
+  }
+  if (opts.ttl && !isNaN(opts.ttl)) {
+    _clearTimeout(key2);
+    _setTimeout(key2, opts.ttl);
+  } else if (_config[key2].ttl) {
+    _clearTimeout(key2);
+  }
+  const res = _getType(value2);
+  value2 = res.value;
+  _config[key2].t = res.type;
+  if (opts.compress || _compressAll) {
+    _config[key2].c = 1;
+    value2 = lzstring.compressToUTF16(value2.toString());
+  }
+  const keyStr = String(key2);
+  const valueStr = String(value2);
+  ls.setItem(keyStr, valueStr);
+  _saveConfig();
+};
+Locally.prototype.get = function(key2) {
+  return Array.isArray(key2) ? utils.map(key2, (item) => _get(item)) : _get(key2);
+};
+Locally.prototype.keys = function(pattern) {
+  if (!pattern || pattern === "*") return _keys.slice(0);
+  const regex = !(pattern instanceof RegExp) ? new RegExp(".*" + pattern + ".*") : pattern;
+  return utils.filter(_keys, (key2) => regex.test(key2));
+};
+Locally.prototype.remove = function(key2) {
+  if (typeof key2 === "undefined")
+    throw new Error("Locally: 'remove' requires a key");
+  if (Array.isArray(key2)) {
+    utils.each(key2, _remove);
+  } else {
+    _remove(key2);
+  }
+};
+Locally.prototype.scan = function(key2, fn) {
+  return utils.each(this.keys(key2), (keyName) => {
+    fn(_get(keyName), keyName);
+  });
+};
+Locally.prototype.ttl = function(key2, returnString) {
+  const cfg = _config[key2];
+  if (!cfg) return -2;
+  if (!cfg.ttl) return -1;
+  const remaining = cfg.ttl - Date.now();
+  return !returnString ? remaining : (0, import_ms.default)(remaining);
+};
+Locally.prototype.persist = function(key2) {
+  return _config[key2] ? !!(delete _config[key2].ttl && _saveConfig() && _clearTimeout(key2)) : false;
+};
+Locally.prototype.expire = function(key2, ttl) {
+  return _config[key2] ? !!((_config[key2].ttl = Date.now() + ttl) && _saveConfig()) : false;
+};
+Locally.prototype.clear = function() {
+  ls.clear();
+  _config = {};
+  _keys = [];
+  return _saveConfig();
+};
+Locally.prototype.key = function(index) {
+  return _keys[index];
+};
+function _remove(key2) {
+  const i = _keys.indexOf(key2);
+  if (i > -1) {
+    ls.removeItem(key2);
+    _keys.splice(_keys.indexOf(key2), 1);
+    delete _config[key2];
+  }
+}
+function _saveConfig() {
+  ls.setItem("locally-config", lzstring.compressToUTF16(JSON.stringify(_config)));
+  return true;
+}
+function _get(key) {
+  if (typeof key === "undefined" || !_config[key]) return null;
+  if (_config[key].ttl && _config[key].ttl < Date.now()) {
+    delete _config[key];
+    _saveConfig();
+    _remove(key);
+    return null;
+  }
+  let temp;
+  let value = _config[key].c ? lzstring.decompressFromUTF16(ls.getItem(key) || "") : ls.getItem(key);
+  switch (_config[key].t) {
+    case "o":
+      try {
+        value = JSON.parse(value);
+      } catch (e) {
+      }
+      return value;
+    case "d":
+      return new Date(parseInt(value, 10));
+    case "r":
+      return new RegExp(value.substring(1, value.length - 1));
+    case "f":
+      eval("temp = " + value);
+      return temp;
+    case "n":
+      return Number(value);
+    case "b":
+      return value === "1";
+    case "s":
+    default:
+      if (value === "null") return null;
+      else if (value === "undefined") return void 0;
+      else return String(value);
+  }
+}
+function _getType(value2) {
+  let type;
+  switch (typeof value2) {
+    case "object":
+      if (value2 instanceof Date) {
+        value2 = value2.getTime();
+        type = "d";
+      } else if (value2 instanceof RegExp) {
+        value2 = value2.toString();
+        type = "r";
+      } else {
+        value2 = JSON.stringify(value2);
+        type = "o";
+      }
+      break;
+    case "function":
+      type = "f";
+      break;
+    case "number":
+      type = "n";
+      break;
+    case "boolean":
+      value2 = value2 ? 1 : 0;
+      type = "b";
+      break;
+    case "string":
+    default:
+      type = "s";
+  }
+  return {
+    value: value2,
+    type
+  };
+}
+function _rebuildConfig() {
+  const len = ls.length;
+  _keys = new Array(len);
+  let l = len;
+  while (l--) {
+    _keys[l] = ls.key(l) || "";
+    _config[_keys[l]] = _config[_keys[l]] || {};
+    if (_compressAll && !_config[_keys[l]].c) {
+      _config[_keys[l]].c = 1;
+      ls.setItem(_keys[l], lzstring.compressToUTF16(ls.getItem(_keys[l]) || ""));
+    } else if (!_compressAll && _config[_keys[l]].c) {
+      delete _config[_keys[l]].c;
+      ls.setItem(_keys[l], lzstring.decompressFromUTF16(ls.getItem(_keys[l]) || "") || "");
     }
-    function _getType(value) {
-        var type;
-        switch (typeof value) {
-            case 'object':
-                if (value instanceof Date) {
-                    value = value.getTime();
-                    type = 'd';
-                }
-                else if (value instanceof RegExp) {
-                    value = value.toString();
-                    type = 'r';
-                }
-                else {
-                    value = JSON.stringify(value);
-                    type = 'o';
-                }
-                break;
-            case 'function':
-                type = 'f';
-                break;
-            case 'number':
-                type = 'n';
-                break;
-            case 'boolean':
-                value = value ? 1 : 0;
-                type = 'b';
-                break;
-            case 'string':
-            default:
-                type = 's';
-        }
-        return {
-            value: value,
-            type: type
-        };
+    if (_config[_keys[l]].ttl) {
+      _setTimeout(_keys[l], _config[_keys[l]].ttl - Date.now());
     }
-    function _rebuildConfig() {
-        var len = ls.length;
-        _keys = new Array(len);
-        var l = len;
-        while (l--) {
-            _keys[l] = ls.key(l) || '';
-            _config[_keys[l]] = _config[_keys[l]] || {};
-            if (_compressAll && !_config[_keys[l]].c) {
-                _config[_keys[l]].c = 1;
-                ls.setItem(_keys[l], lzstring.compressToUTF16(ls.getItem(_keys[l]) || ''));
-            }
-            else if (!_compressAll && _config[_keys[l]].c) {
-                delete _config[_keys[l]].c;
-                ls.setItem(_keys[l], lzstring.decompressFromUTF16(ls.getItem(_keys[l]) || '') || '');
-            }
-            if (_config[_keys[l]].ttl) {
-                _setTimeout(_keys[l], _config[_keys[l]].ttl - Date.now());
-            }
-        }
-        var configIndex = _keys.indexOf('locally-config');
-        if (configIndex > -1) {
-            _keys.splice(configIndex, 1);
-        }
-    }
-    function _setTimeout(key, ttl) {
-        _config[key] = _config[key] || {};
-        _config[key].ttl = Date.now() + ttl;
-        _timeouts[key] = setTimeout(function () {
-            _remove(key);
-        }, ttl);
-    }
-    function _clearTimeout(key) {
-        if (_keys.indexOf(key) > -1) {
-            clearTimeout(_timeouts[key]);
-            delete _timeouts[key];
-            delete _config[key].ttl;
-            return true;
-        }
-        return false;
-    }
-    if (typeof exports === 'object') {
-        exports.Store = Locally;
-    }
-    if (typeof define === 'function' && define.amd) {
-        define(function () {
-            return { Store: Locally };
-        });
-    }
-    if (typeof window === 'object') {
-        window.Locally = {
-            Store: Locally
-        };
-    }
-})();
+  }
+  const configIndex = _keys.indexOf("locally-config");
+  if (configIndex > -1) {
+    _keys.splice(configIndex, 1);
+  }
+}
+function _setTimeout(key2, ttl) {
+  _config[key2] = _config[key2] || {};
+  _config[key2].ttl = Date.now() + ttl;
+  _timeouts[key2] = setTimeout(() => {
+    _remove(key2);
+  }, ttl);
+}
+function _clearTimeout(key2) {
+  if (_keys.indexOf(key2) > -1) {
+    clearTimeout(_timeouts[key2]);
+    delete _timeouts[key2];
+    delete _config[key2].ttl;
+    return true;
+  }
+  return false;
+}
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  Store
+});
 //# sourceMappingURL=locally.js.map
