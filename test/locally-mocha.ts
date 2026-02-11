@@ -185,7 +185,7 @@ function runTests() {
   const vars = getTestVars();
   const { assert: a, localStorage: ls, Store: S, testMode: tm } = vars;
   let store = vars.store;
-  const assert = a;
+  const assert: typeof import('chai').assert = a;
   const localStorage = ls;
   const Store = S;
   const testMode = tm;
