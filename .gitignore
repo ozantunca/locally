@@ -29,3 +29,4 @@ node_modules
 
 .DS_Store
 test/storage/
+test/locally-mocha.js

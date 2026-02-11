@@ -1,28 +1,4 @@
-"use strict";
-var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key2 of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key2) && key2 !== except)
-        __defProp(to, key2, { get: () => from[key2], enumerable: !(desc = __getOwnPropDesc(from, key2)) || desc.enumerable });
-  }
-  return to;
-};
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
 // src/light.ts
-var light_exports = {};
-__export(light_exports, {
-  Store: () => Locally
-});
-module.exports = __toCommonJS(light_exports);
 var ls = typeof window !== "undefined" ? window.localStorage : null;
 if (!ls) {
   const memoryStorage = {
@@ -292,8 +268,7 @@ function _clearTimeout(key2) {
   }
   return false;
 }
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
-  Store
-});
-//# sourceMappingURL=light.js.map
+export {
+  Locally as Store
+};
+//# sourceMappingURL=light.mjs.map
