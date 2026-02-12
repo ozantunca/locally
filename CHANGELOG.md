@@ -1,3 +1,15 @@
+# [0.4.0](https://github.com/ozantunca/locally/compare/v0.3.2...v0.4.0) (2026-02-12)
+
+
+### Bug Fixes
+
+* modernized build tools ([3d069ad](https://github.com/ozantunca/locally/commit/3d069ad940d3e443040c175ff60ae40a0d524d32))
+
+
+### Features
+
+* version bump ([f315c02](https://github.com/ozantunca/locally/commit/f315c02719b3eb908845c53f9f9bc4f3820e55c4))
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
