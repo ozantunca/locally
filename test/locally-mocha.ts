@@ -624,10 +624,11 @@ function runTests() {
         assert.isBelow(store.ttl('somekey') as number, 1000);
       }, 500);
 
+      // Use 1500ms so CI (slower event loop) has enough time for expiry to run
       setTimeout(function () {
         assert.isNull(store.get('somekey'));
         done();
-      }, 1001);
+      }, 1500);
     });
 
     it('should return false if key does not exist', function () {

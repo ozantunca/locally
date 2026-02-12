@@ -244,7 +244,12 @@ function _rebuildConfig() {
     _config[_keys[l]] = _config[_keys[l]] || {};
     ls.setItem(_keys[l], ls.getItem(_keys[l]) || "");
     if (_config[_keys[l]].ttl) {
-      _setTimeout(_keys[l], _config[_keys[l]].ttl - Date.now());
+      const remaining = _config[_keys[l]].ttl - Date.now();
+      if (remaining <= 0) {
+        _remove(_keys[l]);
+      } else {
+        _setTimeout(_keys[l], remaining);
+      }
     }
   }
   const configIndex = _keys.indexOf("locally-config");
