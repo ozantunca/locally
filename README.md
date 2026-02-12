@@ -59,6 +59,7 @@ setTimeout(function () {
       - [Compression](#compression-1)
     - [How Locally Works](#how-locally-works)
     - [Testing](#testing)
+    - [Versioning and releases](#versioning-and-releases)
 
 ### Usage
 
@@ -345,3 +346,22 @@ npm test
 ```
 
 To run browser tests, open `test/browser.html` in your browser after building with `npm run build`.
+
+### Versioning and releases
+
+This project uses [Semantic Versioning](https://semver.org/) and [semantic-release](https://github.com/semantic-release/semantic-release) for automated releases. Pushing to `main` or `master` runs the release workflow, which:
+
+1. Analyzes commits using [Conventional Commits](https://www.conventionalcommits.org/)
+2. Chooses the next version (patch / minor / major) from commit types
+3. Updates `CHANGELOG.md` and `package.json`, creates a Git tag and GitHub release
+4. Publishes to npm (if `NPM_TOKEN` is set in the repo secrets)
+
+**Commit message format** (determines version bump):
+
+- `fix:` or `fix(scope):` → **patch** (e.g. 1.0.0 → 1.0.1)
+- `feat:` or `feat(scope):` → **minor** (e.g. 1.0.0 → 1.1.0)
+- `BREAKING CHANGE:` in footer or `feat!:` / `fix!:` → **major** (e.g. 1.0.0 → 2.0.0)
+
+**To enable npm publish:** add an `NPM_TOKEN` secret (Automation token from npmjs.com) in the repo’s GitHub Settings → Secrets and variables → Actions.
+
+Manual version bumps are still available: `npm run version:patch`, `version:minor`, `version:major` (run tests, bump version, create tag; no automated publish).
