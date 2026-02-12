@@ -1,3 +1,15 @@
+# [0.5.0](https://github.com/ozantunca/locally/compare/v0.4.0...v0.5.0) (2026-02-12)
+
+
+### Bug Fixes
+
+* **expire:** adjusting tests and changing key expry a bit ([afb7df2](https://github.com/ozantunca/locally/commit/afb7df2b2228c0e17e332bd5e23625fb63c5cb36))
+
+
+### Features
+
+* major deployment ([95475c2](https://github.com/ozantunca/locally/commit/95475c2530d1ec4cd97435c23538480bd29969cc))
+
 # [0.4.0](https://github.com/ozantunca/locally/compare/v0.3.2...v0.4.0) (2026-02-12)
 
 
