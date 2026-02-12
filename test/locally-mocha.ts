@@ -571,7 +571,8 @@ function runTests() {
     });
 
     it('should return string if second parameter is true', function (done) {
-      store.set('somekey', 'somevalue', '2s');
+      // Light build only supports numeric TTL (no '2s' parsing)
+      store.set('somekey', 'somevalue', testMode === 'light' ? 2000 : '2s');
 
       assert.isAbove(store.ttl('somekey') as number, 0);
 
